@@ -171,6 +171,7 @@ write_report() {   # $1 = title of this snapshot
     echo "files not owned by the prefix owner: $N_BAD"
     echo "group-writable files: $N_GROUP_WRITABLE"
     echo "file owners (count, name):"
+    # shellcheck disable=SC2001  # indent every line; ${var//} cannot do that
     echo "$OWNER_HISTOGRAM" | sed 's/^/  /'
     echo "other brew locations:"
     local p
@@ -323,7 +324,8 @@ final_check() {
   else say "FAIL  files with another owner:"; say "$bad"; fail=1; fi
   if sudo -u "$REAL_USER" "$BREW" --version >/dev/null 2>&1; then say "PASS  brew --version works for $REAL_USER"
   else say "FAIL  brew --version does not work for $REAL_USER"; fail=1; fi
-  [[ -f $SHARE_DIR/brew-wrapper.zsh ]] && say "PASS  wrapper is in $SHARE_DIR" || { say "FAIL  wrapper is missing"; fail=1; }
+  if [[ -f $SHARE_DIR/brew-wrapper.zsh ]]; then say "PASS  wrapper is in $SHARE_DIR"
+  else say "FAIL  wrapper is missing"; fail=1; fi
   # A new Terminal window must load the wrapper. Test it the same way: a fresh login shell.
   if grep -qsF "$WRAPPER_LINE" "$REAL_HOME/.zshrc"; then
     if sudo -u "$REAL_USER" -H /bin/zsh -ilc 'type brew' 2>/dev/null | grep -q 'shell function'; then
