@@ -1,8 +1,8 @@
 #!/bin/bash
 # Make a fresh demo VM: Homebrew installed, one admin user, one second admin user.
-# Usage: docs/demo/prepare.sh [base-vm]   (default: tahoe-base)
+# Usage: docs/demo/prepare.sh [base-vm]   (default: ghcr.io/cirruslabs/macos-tahoe-base:latest)
 set -euo pipefail
-BASE=${1:-tahoe-base}; VM=hb-demo; HERE=$(cd "$(dirname "$0")/../.." && pwd)
+BASE=${1:-ghcr.io/cirruslabs/macos-tahoe-base:latest}; VM=hb-demo; HERE=$(cd "$(dirname "$0")/../.." && pwd)
 tart stop "$VM" 2>/dev/null || true
 tart delete "$VM" 2>/dev/null || true
 tart clone "$BASE" "$VM"

@@ -14,8 +14,8 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 
 ## Not done / next
 
-1. Done: `tests/tart-test.sh` and `setup.sh --apply` (plus `verify.sh`) run as real scripts in Tart; see round 3 in `docs/test-results.md`.
-2. Done (terminal recordings instead of GUI screenshots): `docs/demo/*.tape` (VHS) produce six GIFs in `docs/images/`; `docs/demo/render.sh` rebuilds them in a fresh Tart VM (`hb-demo`). Step-by-step guide for a new user: `docs/getting-started.md` (simplified-English style, about 80% ASD-STE100). Still open: GUI screenshots (needs Screen Recording permission) and a second guide for the problem state (users and Homebrew already exist, wrong owner).
+1. Done: `tests/tart-test.sh` and `setup.sh` (now the only script; `verify.sh` was folded in) run as real scripts in Tart; see round 3 in `docs/test-results.md`.
+2. Done (terminal recordings instead of GUI screenshots): `docs/demo/record.py` (asciinema + agg, driven through a pty) makes seven GIFs in `docs/images/` (speed 0.75, set by `SPEED` in the script) and keeps the casts in `docs/casts/` (they play in the asciinema player; GIFs cannot pause); `docs/demo/render.sh` rebuilds them in a fresh Tart VM (`hb-demo`) cloned from the pristine OCI image, not from the old `tahoe-base`. Step-by-step guide for a new user: `docs/getting-started.md` (simplified-English style, about 80% ASD-STE100). Still open: GUI screenshots (needs Screen Recording permission) and a second guide for the problem state (users and Homebrew already exist, wrong owner).
 3. Done: GitHub login, signing key uploaded, email privacy settings, repo created (private).
 4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included).
 5. Drift check: done. `scripts/drift-check.sh` compares raw upstream docs (Mac Admins, FAQ, Installation from Homebrew/brew) with `docs/upstream-snapshots/`; `.github/workflows/drift-check.yml` runs it weekly (Mondays) and opens or updates an `upstream-drift` issue. Refresh snapshots with `scripts/drift-check.sh --update` after review. Still open: scheduled Tart/latest-Homebrew re-test (needs a macOS runner). Verify the workflow once via `gh workflow run drift-check.yml`.
@@ -23,13 +23,16 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 
 ## Open items to pick up
 
-- **User is verifying `docs/getting-started.md` by hand** and will report results next session. Fix any wrong or unclear steps first. Untested parts: the System Settings steps (Part 2) and `git clone` of the real address.
-
+- **Single script (2026-11-25):** `scripts/setup.sh` checks Homebrew (install method, owners, accounts, who uses brew), fixes the wrong-owner/mixed-owner problem, creates the hidden owner account (user picks name and password), installs the wrapper, and writes a report file for the user's own AI agent. `--check` changes nothing. `--yes --password-stdin --owner NAME` is for tests. Tested in Tart: problem, mixed owners, fix, re-run (no-op), drift. The interactive prompts (read from `/dev/tty`) were recorded in `docs/images/04-setup.gif`; `tart exec` without a tty cannot test them.
+- `docs/getting-started.md` was rewritten for this flow (Parts 1-7, no Tart mentions). Still to do: README rewrite (Mac Admins summary and link, greenfield path vs. already-broken path, plain language), guide for the greenfield path, test-results round 4, shellcheck/markdownlint (not run on the host).
+- The `git clone` URL in the guide needs the repo to be public. The clip for Part 2 shows only `git --version`.
+- The pristine image's Homebrew is 7.0.12; `docs/test-results.md` still says 7.0.16 (from the old `tahoe-base`). Update the compatibility table after a new test round.
+- The user's own video `2026-11-24 23-46-35.mp4` sits untracked in the repo root. Do not commit it.
 - Dependabot PRs #1 and #2 are closed and their branches are gone.
 - Git remote is SSH (`git@github.com:...`); the signing key is registered for both signing and authentication.
 - Suggested next: guide for the problem state (existing users, Homebrew already installed); then item 6 coverage gaps.
-- Demo tapes: never run `vhs` on a tape while `hb-demo` is stopped; the tape would type into the host shell. `render.sh` checks this. `Wait+Screen` is unreliable during long brew output; use fixed `Sleep`.
-- `vhs` and `ttyd` are now installed on the host (user-approved).
+- Demo clips: `record.py` refuses to run if `hb-demo` is down. VHS was dropped: `Wait+Screen` read stale screens. Recording now waits on the text stream.
+- `asciinema` and `agg` are installed on the host (user-approved 2026-11-25); `vhs`/`ttyd` from before are no longer used.
 - ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
 
 ## Rules from the user
@@ -37,3 +40,7 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 - Use Tart for testing before making any change on this machine.
 - Keep personal info out of the repo. Every commit is checked by local hooks (`.git/hooks/pre-commit`, `commit-msg`, patterns in the untracked `.git/hooks/private-patterns`). These hooks are not cloned: recreate them on any new clone. Do not use `--no-verify`.
 - Make the repo public only when the user says it is ready.
+
+## Next manual test (user)
+
+Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest hb-manual && tart run hb-manual`. Create a second admin user in System Settings (the guide says two admin accounts are needed), then follow `docs/getting-started.md`. The repo is private, so the `git clone` step will not work until it is public. Copy the repo into the VM another way for now.

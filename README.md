@@ -17,11 +17,11 @@ A dedicated hidden account, `homebrew`, owns `/opt/homebrew`. Every human runs `
 New to this? Follow the step-by-step [getting started guide](docs/getting-started.md). It has animated recordings of every step.
 
 ```sh
-sudo ./scripts/setup.sh           # prints the plan only
-sudo ./scripts/setup.sh --apply   # creates the account and changes ownership
+sudo ./scripts/setup.sh --check   # reads only; writes a report file
+sudo ./scripts/setup.sh           # asks, then creates the account and fixes ownership
 ```
 
-Then add [scripts/brew-wrapper.zsh](scripts/brew-wrapper.zsh) to each user's `~/.zshrc`, open a new terminal, and run `./scripts/verify.sh`.
+The one script checks your Homebrew, fixes the owner, creates the hidden account (you choose the name and password), installs the wrapper for you, and writes a report file for your own AI agent. Each other user then adds the wrapper to their `~/.zshrc`; the script prints the command.
 
 Close all brew and Claude Code sessions before running setup. Never run `sudo brew`.
 
