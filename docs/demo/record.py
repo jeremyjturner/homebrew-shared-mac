@@ -235,12 +235,6 @@ def clip_setup(s):
     s.expect(r"Make these changes now\?")
     time.sleep(7.0)                   # time to read the plan
     s.line("y")
-    s.expect(r"Password for 'homebrew':")
-    time.sleep(8.0)                   # time to read the reminder
-    s.line("demo-password", 0.08)
-    s.expect(r"Type it again:")
-    time.sleep(0.8)
-    s.line("demo-password", 0.08)
     s.expect(r"Add the brew wrapper")
     time.sleep(1.5)
     s.line("y")

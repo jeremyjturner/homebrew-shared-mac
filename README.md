@@ -40,7 +40,7 @@ What that guide says:
 
 This repository does that for you:
 
-- One script creates a hidden account. You choose its name and its password.
+- One script creates a hidden account. You choose its name. The script sets a random password.
 - That account owns `/opt/homebrew`.
 - A small helper, the wrapper, goes in each person's `~/.zshrc`.
   It sends `brew` commands to the hidden account.
@@ -121,7 +121,9 @@ The script creates one account to own `/opt/homebrew`. It is the dedicated owner
 - Its user ID is 600 or the next free number. Its type is administrator.
   This lets apps (casks) install into `/Applications` and run installers that need `sudo`.
   Homebrew's own example uses a standard account, which cannot do this.
-- You choose its name and its password. You rarely need the password again.
+- You choose its name. The script sets a random password that nobody sees.
+  Homebrew does not need it (tested: casks that need `sudo` install without it).
+  An administrator can set a new password with `sudo dscl . -passwd /Users/homebrew <new-password>`.
 
 ### Known limits (tested)
 

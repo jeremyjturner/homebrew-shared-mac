@@ -90,3 +90,17 @@ RESULT
 
 - This supports the reason in the README: the owner is an administrator so casks can install into `/Applications`.
 - Not tested: a cask with a `.pkg` installer (`powershell` is not a cask in this brew version). Also not tested: a standard owner with a terminal and a sudo password.
+
+ROUND 6 (random owner password, 2026-11-25)
+
+Setup: fresh clone of `ghcr.io/cirruslabs/macos-tahoe-base:latest` (macOS 26.6.2, Homebrew 7.0.12). The owner password is random and was never shown. Passwordless sudo was removed for the admin account. A second user ran `brew` through the wrapper in a pty (`su - bob`).
+
+PASS
+
+- `brew install --cask rectangle` asked for the second user's own password once. It asked for nothing else. The app landed in `/Applications`, owned by `homebrew:admin`. So the owner's password is not needed, even for a cask that copies into `/Applications` with `sudo`.
+- `sudo dscl . -passwd /Users/homebrew <new>` followed by `dscl . -authonly` works (now a check in `tests/tart-test.sh`).
+- `tests/tart-test.sh` passes with `setup.sh` (no `--password-stdin` option any more).
+
+NOT TESTED
+
+- A `.pkg` cask that runs an installer as the owner.

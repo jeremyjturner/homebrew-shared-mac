@@ -3,7 +3,8 @@
 #
 # This is the only script you need. It does three things:
 #   1. Checks Homebrew, finds the problem, and fixes it (wrong owner, mixed owners).
-#   2. Creates the hidden account that owns Homebrew. You choose the name and password.
+#   2. Creates the hidden account that owns Homebrew. You choose the name.
+#      The script sets a random password that nobody sees (no one logs in with it).
 #   3. Writes a report file that you can give to your own AI agent to troubleshoot.
 #
 # Usage:
@@ -14,7 +15,6 @@
 #   --owner NAME       name of the owner account (default: homebrew)
 #   --report FILE      where to write the report
 #   --yes              do not ask questions (for tests)
-#   --password-stdin   read the owner password from standard input (for tests)
 set -u -o pipefail
 
 PREFIX=/opt/homebrew
@@ -27,7 +27,6 @@ WRAPPER_SRC=$HERE/brew-wrapper.zsh
 WRAPPER_LINE="source $SHARE_DIR/brew-wrapper.zsh"
 CHECK_ONLY=0
 ASSUME_YES=0
-PW_STDIN=0
 REPORT=""
 
 say()  { printf '%s\n' "$*"; }
@@ -44,7 +43,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) CHECK_ONLY=1 ;;
     --yes) ASSUME_YES=1 ;;
-    --password-stdin) PW_STDIN=1 ;;
     --owner) shift; OWNER=${1:-} ;;
     --report) shift; REPORT=${1:-} ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
@@ -242,37 +240,17 @@ choose_owner() {
   fi
 }
 
-get_password() {
-  if [[ $PW_STDIN -eq 1 ]]; then
-    IFS= read -r PW || die "No password on standard input."
-    return
-  fi
-  cat <<NOTE
-
-You now choose the password for the '$OWNER' account.
-  - This account owns every Homebrew file. Keep its password safe.
-  - Save it in a password manager now. Do not share it.
-  - Do not use a password that you use anywhere else.
-  - You rarely need it. You need it if you must change the account later.
-
-NOTE
-  local p1 p2 tries=0
-  while [[ $tries -lt 3 ]]; do
-    IFS= read -r -s -p "Password for '$OWNER': " p1 </dev/tty; echo
-    IFS= read -r -s -p "Type it again: " p2 </dev/tty; echo
-    if [[ ${#p1} -lt 8 ]]; then warn "Use at least 8 characters."
-    elif [[ $p1 != "$p2" ]]; then warn "The two passwords are not the same."
-    else PW=$p1; return
-    fi
-    tries=$((tries + 1))
-  done
-  die "Too many tries. Nothing was changed."
+# The owner account never logs in. Nobody needs its password, so use a random one.
+# An administrator can set a new one later: sudo dscl . -passwd /Users/NAME NEWPASSWORD
+make_password() {
+  PW=$(openssl rand -base64 36 | tr -dc 'A-Za-z0-9' | cut -c1-24)
+  [[ ${#PW} -eq 24 ]] || die "Could not make a random password."
 }
 
 print_plan() {
   say "Plan"
   if [[ $CREATE_OWNER -eq 1 ]]; then
-    say "  1. Create the administrator account '$OWNER' (UID $(next_free_uid)) with your password."
+    say "  1. Create the administrator account '$OWNER' (UID $(next_free_uid)) with a random password."
     say "  2. Hide it and set its shell to /usr/bin/false (nobody can log in with it)."
   else
     say "  1. Use the existing hidden account '$OWNER'."
@@ -296,7 +274,7 @@ apply() {
       || { printf '%s\n' "$out" >&2; die "Could not create '$OWNER'. Nothing else was changed."; }
     dscl . create "/Users/$OWNER" IsHidden 1 || die "Could not hide '$OWNER'."
     dscl . create "/Users/$OWNER" UserShell /usr/bin/false || die "Could not set the shell."
-    dscl . -authonly "$OWNER" "$PW" >/dev/null 2>&1 || warn "The new password did not pass a test login. Check it later."
+    dscl . -authonly "$OWNER" "$PW" >/dev/null 2>&1 || warn "The new account did not pass a test login."
     unset PW
     say "Created the hidden account '$OWNER'."
   fi
@@ -374,7 +352,7 @@ choose_owner
 print_plan
 ask "Make these changes now?" || { say "Nothing was changed."; say "Report: $REPORT"; exit 0; }
 PW=""
-[[ $CREATE_OWNER -eq 1 ]] && get_password
+[[ $CREATE_OWNER -eq 1 ]] && make_password
 apply
 
 FINDINGS=""

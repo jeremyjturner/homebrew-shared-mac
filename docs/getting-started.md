@@ -10,7 +10,7 @@ Do not skip a step.
 
 ## What you get
 
-- One hidden account owns Homebrew. You choose its name and its password.
+- One hidden account owns Homebrew. You choose its name. The script sets a random password for it.
 - Each person uses their own account for daily work.
 - Each person types their own password to install software.
 - No person must change the owner of the Homebrew folder again.
@@ -152,15 +152,15 @@ Its name is `shared-brew-report-<date>.txt`.
    Press Return to use `homebrew`, or type your own name.
 4. Read the plan.
    Type `y` and press Return to continue.
-5. The script asks you to choose a password for the hidden account.
-   Type the password and press Return. Type it again.
-6. Save this password in your password manager now.
-   Do not share it. Do not use it for anything else.
-   You do not use it every day.
-   You need it if you must change the account later.
-7. The script asks if it can add the wrapper to your `~/.zshrc` file.
+5. The script asks if it can add the wrapper to your `~/.zshrc` file.
    Type `y` and press Return.
-8. Wait for the lines that start with `PASS`.
+6. Wait for the lines that start with `PASS`.
+
+The script sets a random password for the hidden account.
+Nobody sees it and nobody can log in with it.
+You do not need to save it.
+If you ever need a new password for the account, an administrator can set one:
+`sudo dscl . -passwd /Users/homebrew <new-password>`.
 
 ![The script creates the hidden account, changes the owner, and checks the result.](images/04-setup.gif)
 
