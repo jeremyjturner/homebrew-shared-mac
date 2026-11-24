@@ -58,15 +58,15 @@ The user's second manual test (fresh VM, scripts copied in) worked with no issue
 
 Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest hb-manual && tart run hb-manual`. Create a second admin user in System Settings (the guide says two admin accounts are needed), then follow `docs/getting-started.md`. The repo is private, so the `git clone` step will not work until it is public. Copy the repo into the VM another way for now.
 
-## Next steps (in order, saved 2026-11-25)
+## Next steps (in order, saved 2026-11-25, end of day)
 
-Last commit: `d9c66b9` (signed, not pushed). Working tree clean.
+Last commit: `fbb23b7` (signed, pushed, CI green). Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
 
-1. **User's manual test** of `docs/getting-started.md` in a fresh VM (see above). Fix any step the user reports as wrong or unclear. Re-record only the affected clip: `python3 docs/demo/record.py <clip>` after `docs/demo/prepare.sh`; or fix from the saved casts with `record.finish()`.
-2. **README rewrite** (user asked for this; not started): plain language, link to `docs/getting-started.md`; summarize and link <https://docs.brew.sh/Homebrew-for-Mac-Admins> (snapshot in `docs/upstream-snapshots/`) to show this follows Homebrew's own guidance; say the reader probably hit the "not writable" error; give two paths: greenfield (new Mac, avoid the problem) and already-broken (existing users, same error). About 80% ASD-STE100.
-3. **Guide for the greenfield path** (new Mac, nothing installed). Note: the official docs prefer a dedicated *standard* account as owner; this repo uses an admin owner by design (see Threat model). Decide and explain.
-4. **Test round 4** in `docs/test-results.md` for the single script. Pristine image has Homebrew 7.0.12 (old notes say 7.0.16). Update the compatibility table.
-5. **Lint**: run shellcheck on `scripts/setup.sh` and markdownlint on the docs inside a Tart VM (not installed on the host). CI also runs them.
-6. **Part 6 of the guide** (second user) and the wrong-password clip depend on the first user finishing Part 4/5. Keep that order.
-7. Open questions: playback speed 0.75 OK? Link a player for the `.cast` files (asciinema.org needs the user's approval, or self-host)? Remaining items 6 in "Not done / next" above (macOS matrix, services, brew.env, uninstall polish).
-8. At the public flip (user decides): branch protection, make the `git clone` step work, check every GIF/cast for private data.
+1. **Guide for a new Mac** (path B in the README uses the same guide for now). Decide: a separate short guide, or keep one guide with a note at the start. Keep the plain style (about 80% ASD-STE100).
+2. **Optional test of a standard-account owner** in Tart: create the owner as a standard account, then run the wrapper, `brew install hello`, a cask (`rectangle`, lands in `/Applications`), a cask that needs `sudo`, and `brew update`. It confirms or refutes the reason in the README ("The hidden account"). Record the result in `docs/test-results.md`.
+3. **"Taps are not trusted" warning** in brew 7.0.12: find out if a normal Mac sees it (the base image has extra taps). Add a short guide note if it does.
+4. **Real password prompts in tests:** the base image `admin` has passwordless sudo (`docs/demo/prepare.sh` removes it). Add a pty test to `tests/tart-test.sh` for a wrong password and a right password. A manual test VM needs the same removal to show real prompts.
+5. **Coverage gaps:** macOS versions beyond 26.6.2, services, `brew.env` for `HOMEBREW_*` settings, uninstall polish.
+6. **Open questions:** is playback speed 0.75 right? Link a player for the `.cast` files (asciinema.org needs the user's approval, or self-host)?
+7. **Housekeeping (ask first):** old Tart VMs `hb-clone`, `hb-demo`, `hb-manual`, `hb-test`, `tahoe-base` are stopped and can be deleted. `asciinema` and `agg` are still installed on the host (user-approved; the clips need them).
+8. **Lint on the host:** `shellcheck` and `markdownlint` are not installed. CI runs them on every push. Check the Actions run after each push.
