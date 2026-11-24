@@ -73,3 +73,20 @@ NOT TESTED
 - `shellcheck` and `markdownlint` did not run on the host (CI runs them).
 - The `git clone` step (the repo is private).
 - GIFs and casts still show the old Part 5 wording. Re-record clip 05 after the public flip.
+
+ROUND 5 (owner as a standard account, 2026-11-25)
+
+Setup: fresh clone of `ghcr.io/cirruslabs/macos-tahoe-base:latest` (macOS 26.6.2, Homebrew 7.0.12). Created `stdbrew` with `sysadminctl -addUser` and no `-admin` flag (not in group `admin`). Changed `/opt/homebrew` to `stdbrew:admin`. Ran each command as `stdbrew` with no terminal (`sudo -u stdbrew`). `setup.sh` was not used.
+
+PASS
+
+- `brew update`, `brew install hello`, `brew upgrade`, `brew doctor`.
+
+FAIL
+
+- `brew install --cask rectangle`: brew runs `sudo cp -pR ... /Applications/Rectangle.app`. A standard account has no `sudo`, so the install stops (`sudo: a password is required`). `/Applications` is `root:admin` mode 775.
+
+RESULT
+
+- This supports the reason in the README: the owner is an administrator so casks can install into `/Applications`.
+- Not tested: a cask with a `.pkg` installer (`powershell` is not a cask in this brew version). Also not tested: a standard owner with a terminal and a sudo password.
