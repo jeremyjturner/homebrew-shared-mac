@@ -1,6 +1,6 @@
 # Handoff
 
-Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes. Not yet public.
+Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protection on `main`: signed commits required, no force-push or deletion, admins included. CI (ShellCheck, markdownlint) passed on earlier commits; check the latest run.
 
 ## Done
 
@@ -40,6 +40,14 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 - Use Tart for testing before making any change on this machine.
 - Keep personal info out of the repo. Every commit is checked by local hooks (`.git/hooks/pre-commit`, `commit-msg`, patterns in the untracked `.git/hooks/private-patterns`). These hooks are not cloned: recreate them on any new clone. Do not use `--no-verify`.
 - Make the repo public only when the user says it is ready.
+
+## Status after the public flip (2026-11-25)
+
+- Pre-public checks done: private-pattern scan of files, history and casts; every GIF reviewed (frames sampled every 3 s).
+- Clean test from a real `git clone` (HTTPS) in a fresh VM passed: setup, new-window wrapper check, `brew install hello`, second user, ownership.
+- Clips 04 and 05 re-recorded (new "Next" text; `type brew` step). Clips 01-03, 06, 07 are unchanged and still match the guide.
+- Still open: shellcheck and markdownlint in a VM (not on the host); README rewrite; greenfield guide; the "taps are not trusted" warning in brew 7.0.12 (only seen with the base image's taps).
+- Remember: the base image's admin has passwordless sudo; `docs/demo/prepare.sh` removes it so the clips show real prompts. A manual test VM needs the same removal to see real prompts.
 
 ## Manual test status (2026-11-25)
 

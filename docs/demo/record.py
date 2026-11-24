@@ -248,6 +248,7 @@ def clip_setup(s):
 
 
 def clip_wrapper(s):
+    s.run("type brew")                    # Part 5, step 2: the new window has the wrapper
     s.run("brew install hello", ["admin"])
     s.run("hello")
 
