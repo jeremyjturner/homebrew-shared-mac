@@ -44,3 +44,16 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 ## Next manual test (user)
 
 Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest hb-manual && tart run hb-manual`. Create a second admin user in System Settings (the guide says two admin accounts are needed), then follow `docs/getting-started.md`. The repo is private, so the `git clone` step will not work until it is public. Copy the repo into the VM another way for now.
+
+## Next steps (in order, saved 2026-11-25)
+
+Last commit: `d9c66b9` (signed, not pushed). Working tree clean.
+
+1. **User's manual test** of `docs/getting-started.md` in a fresh VM (see above). Fix any step the user reports as wrong or unclear. Re-record only the affected clip: `python3 docs/demo/record.py <clip>` after `docs/demo/prepare.sh`; or fix from the saved casts with `record.finish()`.
+2. **README rewrite** (user asked for this; not started): plain language, link to `docs/getting-started.md`; summarize and link <https://docs.brew.sh/Homebrew-for-Mac-Admins> (snapshot in `docs/upstream-snapshots/`) to show this follows Homebrew's own guidance; say the reader probably hit the "not writable" error; give two paths: greenfield (new Mac, avoid the problem) and already-broken (existing users, same error). About 80% ASD-STE100.
+3. **Guide for the greenfield path** (new Mac, nothing installed). Note: the official docs prefer a dedicated *standard* account as owner; this repo uses an admin owner by design (see Threat model). Decide and explain.
+4. **Test round 4** in `docs/test-results.md` for the single script. Pristine image has Homebrew 7.0.12 (old notes say 7.0.16). Update the compatibility table.
+5. **Lint**: run shellcheck on `scripts/setup.sh` and markdownlint on the docs inside a Tart VM (not installed on the host). CI also runs them.
+6. **Part 6 of the guide** (second user) and the wrong-password clip depend on the first user finishing Part 4/5. Keep that order.
+7. Open questions: playback speed 0.75 OK? Link a player for the `.cast` files (asciinema.org needs the user's approval, or self-host)? Remaining items 6 in "Not done / next" above (macOS matrix, services, brew.env, uninstall polish).
+8. At the public flip (user decides): branch protection, make the `git clone` step work, check every GIF/cast for private data.
