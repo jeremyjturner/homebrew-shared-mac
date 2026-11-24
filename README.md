@@ -14,6 +14,8 @@ A dedicated hidden account, `homebrew`, owns `/opt/homebrew`. Every human runs `
 
 ## Quick start
 
+New to this? Follow the step-by-step [getting started guide](docs/getting-started.md). It has animated recordings of every step.
+
 ```sh
 sudo ./scripts/setup.sh           # prints the plan only
 sudo ./scripts/setup.sh --apply   # creates the account and changes ownership
