@@ -1,0 +1,47 @@
+name: Upstream drift check
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compare upstream docs with snapshots
+        id: check
+        run: |
+          set +e
+          scripts/drift-check.sh > drift.diff 2> drift.err
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat drift.err
+      - name: Fail on fetch error
+        if: steps.check.outputs.status == '2'
+        run: exit 1
+      - name: Open or update issue on drift
+        if: steps.check.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Upstream Homebrew docs differ from the stored snapshots."
+            echo
+            echo "Review the changes against README and docs. If still accurate, run"
+            echo '`scripts/drift-check.sh --update` and commit the new snapshots.'
+            echo
+            echo '```diff'
+            head -c 55000 drift.diff
+            echo '```'
+          } > body.md
+          gh label create upstream-drift --color FBCA04 \
+            --description "Upstream Homebrew docs changed" 2>/dev/null || true
+          existing=$(gh issue list --label upstream-drift --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --label upstream-drift \
+              --title "Upstream Homebrew docs changed" --body-file body.md
+          fi

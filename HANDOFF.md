@@ -18,13 +18,14 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 2. **Screenshots** of the Tart test for visual reference: run the VM with graphics (`tart run hb-test`), capture the key steps, put images in `docs/images/`, reference them from the README and docs.
 3. Done: GitHub login, signing key uploaded, email privacy settings, repo created (private).
 4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included).
-5. Drift-check workflow: scheduled Action that fetches <https://docs.brew.sh/Homebrew-for-Mac-Admins> plus FAQ/Installation pages, diffs against a stored snapshot, opens an issue on change; also scheduled Tart/latest-Homebrew re-test (needs a macOS runner).
+5. Drift check: done. `scripts/drift-check.sh` compares raw upstream docs (Mac Admins, FAQ, Installation from Homebrew/brew) with `docs/upstream-snapshots/`; `.github/workflows/drift-check.yml` runs it weekly (Mondays) and opens or updates an `upstream-drift` issue. Refresh snapshots with `scripts/drift-check.sh --update` after review. Still open: scheduled Tart/latest-Homebrew re-test (needs a macOS runner). Verify the workflow once via `gh workflow run drift-check.yml`.
 6. Not yet covered: macOS version matrix beyond 26.6.2, services alternative, brew.env path for HOMEBREW_* settings, uninstall section polish.
 
 ## Open items to pick up
 
-- Dependabot PRs #1 and #2 are superseded by the SHA pins; close them with `--delete-branch` (the auto-mode classifier blocked me from doing it).
-- Suggested next: screenshots (item 2), then the drift-check workflow (item 5).
+- Dependabot PRs #1 and #2 are closed and their branches are gone.
+- Git remote is SSH (`git@github.com:...`); the signing key is registered for both signing and authentication.
+- Suggested next: screenshots (item 2); then item 6 coverage gaps.
 - ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
 
 ## Rules from the user
