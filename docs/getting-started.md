@@ -2,6 +2,7 @@
 
 This guide shows you how to share one Homebrew installation between two users on one Mac.
 It starts from a Mac where Homebrew is already installed.
+Homebrew is not installed yet? Read the [new Mac guide](new-mac.md) first.
 Follow the steps in order.
 Do not skip a step.
 
@@ -51,7 +52,7 @@ When a command asks for a password, no characters show on the screen. This is no
    ```
 
    You see a line that starts with `Homebrew`.
-   If you see `command not found`, install Homebrew first. Go to <https://brew.sh>.
+   If you see `command not found`, install Homebrew first. Read the [new Mac guide](new-mac.md).
 3. Type this command and press Return:
 
    ```sh

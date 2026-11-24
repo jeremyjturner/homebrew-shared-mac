@@ -65,11 +65,9 @@ The folder has the wrong owner, or several owners.
 
 You want to avoid the problem from the start.
 
-1. Install Homebrew the normal way from [brew.sh](https://brew.sh), with your first account.
-2. Open the [getting started guide](docs/getting-started.md) and follow it.
-3. Do this before anyone runs `sudo chown` on the Homebrew folder.
-
-There is one guide for both paths for now.
+1. Open the [new Mac guide](docs/new-mac.md).
+2. It installs Homebrew and adds the second account.
+3. It then sends you to the [getting started guide](docs/getting-started.md), Part 2.
 
 ## Quick look
 

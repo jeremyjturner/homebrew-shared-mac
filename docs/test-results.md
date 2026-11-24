@@ -104,3 +104,15 @@ PASS
 NOT TESTED
 
 - A `.pkg` cask that runs an installer as the owner.
+
+ROUND 7 (new-Mac path, 2026-11-25)
+
+Setup: fresh clone of the base image. `/opt/homebrew` removed, then the official installer from brew.sh run as `admin` (Homebrew 7.0.16). The installer printed the `echo` and `eval` lines under `Next steps`.
+
+PASS
+
+- After the install, `/opt/homebrew` is owned by `admin`, and `setup.sh --check` reports the same problem state as path A. So the new-Mac guide hands over to the getting-started guide at Part 2.
+
+NOT TESTED
+
+- The installer's prompts (Return key, sudo password) were skipped (no terminal; the base image has passwordless sudo). The Command Line Tools were already present.
