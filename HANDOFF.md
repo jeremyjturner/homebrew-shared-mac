@@ -68,5 +68,6 @@ Last commit: `fbb23b7` (signed, pushed, CI green). Working tree clean except the
 4. **Real password prompts in tests:** the base image `admin` has passwordless sudo (`docs/demo/prepare.sh` removes it). Add a pty test to `tests/tart-test.sh` for a wrong password and a right password. A manual test VM needs the same removal to show real prompts.
 5. **Coverage gaps:** macOS versions beyond 26.6.2, services, `brew.env` for `HOMEBREW_*` settings, uninstall polish.
 6. **Open questions:** is playback speed 0.75 right? Link a player for the `.cast` files (asciinema.org needs the user's approval, or self-host)?
-7. **Housekeeping (ask first):** old Tart VMs `hb-clone`, `hb-demo`, `hb-manual`, `hb-test`, `tahoe-base` are stopped and can be deleted. `asciinema` and `agg` are still installed on the host (user-approved; the clips need them).
-8. **Lint on the host:** `shellcheck` and `markdownlint` are not installed. CI runs them on every push. Check the Actions run after each push.
+7. **Housekeeping:** old Tart VMs were deleted 2026-11-25 with user approval. Playback speed 0.75 is confirmed. The `.cast` player is the user's task for another day. `asciinema` and `agg` are still installed on the host (user-approved; the clips need them).
+8. **Lint on the host:** `shellcheck` and `markdownlint-cli2` are installed (user-approved 2026-11-25) and run clean. CI also runs them.
+9. `tests/tart-test.sh` now makes random passwords per run. `docs/demo/prepare.sh` and `record.py` still use fixed demo passwords (`bobpw`, `demo-password`) because they are typed on screen in the clips. Changing them means re-recording.
