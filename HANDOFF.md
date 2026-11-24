@@ -63,7 +63,7 @@ Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirrusl
 Last commit: `fbb23b7` (signed, pushed, CI green). Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
 
 1. **Guide for a new Mac** (path B in the README uses the same guide for now). Decide: a separate short guide, or keep one guide with a note at the start. Keep the plain style (about 80% ASD-STE100).
-2. **Optional test of a standard-account owner** in Tart: create the owner as a standard account, then run the wrapper, `brew install hello`, a cask (`rectangle`, lands in `/Applications`), a cask that needs `sudo`, and `brew update`. It confirms or refutes the reason in the README ("The hidden account"). Record the result in `docs/test-results.md`.
+2. Done (round 5 in `docs/test-results.md`): a standard-account owner runs `update`, `install`, `upgrade`, but a cask fails (needs `sudo` for `/Applications`). This confirms the README reason. Not tested: a `.pkg` cask.
 3. **"Taps are not trusted" warning** in brew 7.0.12: find out if a normal Mac sees it (the base image has extra taps). Add a short guide note if it does.
 4. **Real password prompts in tests:** the base image `admin` has passwordless sudo (`docs/demo/prepare.sh` removes it). Add a pty test to `tests/tart-test.sh` for a wrong password and a right password. A manual test VM needs the same removal to show real prompts.
 5. **Coverage gaps:** macOS versions beyond 26.6.2, services, `brew.env` for `HOMEBREW_*` settings, uninstall polish.
