@@ -21,6 +21,12 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 5. Drift-check workflow: scheduled Action that fetches <https://docs.brew.sh/Homebrew-for-Mac-Admins> plus FAQ/Installation pages, diffs against a stored snapshot, opens an issue on change; also scheduled Tart/latest-Homebrew re-test (needs a macOS runner).
 6. Not yet covered: macOS version matrix beyond 26.6.2, services alternative, brew.env path for HOMEBREW_* settings, uninstall section polish.
 
+## Open items to pick up
+
+- Dependabot PRs #1 and #2 are superseded by the SHA pins; close them with `--delete-branch` (the auto-mode classifier blocked me from doing it).
+- Suggested next: run `tests/tart-test.sh` and `setup.sh --apply` as real scripts in Tart.
+- ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
+
 ## Rules from the user
 
 - Use Tart for testing before making any change on this machine.
