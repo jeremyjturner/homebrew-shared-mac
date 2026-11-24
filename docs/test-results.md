@@ -39,3 +39,15 @@ CAVEATS
 
 - The VM's `admin` has passwordless sudo; the password prompt was tested only for `bob`.
 - Tested on one macOS version (26.6.2) and Homebrew 7.0.16.
+
+ROUND 3 (scripts run as real scripts, 2026-11-24)
+
+PASS
+
+- `tests/tart-test.sh` runs end to end from a fresh clone of the base VM (about 52 s) and ends with `PASS ownership`.
+- `scripts/setup.sh` in a fresh VM: plan mode changes nothing; `--apply` creates the hidden `homebrew` account (UID 600, shell `/usr/bin/false`, `IsHidden 1`); a second run refuses with "User homebrew already exists."
+- `scripts/verify.sh` afterwards: `PASS ownership`, `PASS brew --version`.
+
+NOTES
+
+- `sysadminctl` prints "No clear text password ... (will not allow user to use FDE)" when the password is passed with `-password`. This is expected and harmless for a hidden service account.

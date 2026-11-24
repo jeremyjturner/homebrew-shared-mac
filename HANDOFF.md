@@ -14,7 +14,7 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 
 ## Not done / next
 
-1. `tests/tart-test.sh` and `setup.sh --apply` have not been executed as scripts; the commands were tested by hand.
+1. Done: `tests/tart-test.sh` and `setup.sh --apply` (plus `verify.sh`) run as real scripts in Tart; see round 3 in `docs/test-results.md`.
 2. **Screenshots** of the Tart test for visual reference: run the VM with graphics (`tart run hb-test`), capture the key steps, put images in `docs/images/`, reference them from the README and docs.
 3. Done: GitHub login, signing key uploaded, email privacy settings, repo created (private).
 4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included).
@@ -24,7 +24,7 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 ## Open items to pick up
 
 - Dependabot PRs #1 and #2 are superseded by the SHA pins; close them with `--delete-branch` (the auto-mode classifier blocked me from doing it).
-- Suggested next: run `tests/tart-test.sh` and `setup.sh --apply` as real scripts in Tart.
+- Suggested next: screenshots (item 2), then the drift-check workflow (item 5).
 - ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
 
 ## Rules from the user
