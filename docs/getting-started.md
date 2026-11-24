@@ -177,23 +177,39 @@ The plain `brew install` command fails.
 The wrapper sends your command to the hidden account.
 Homebrew asks for your password first.
 
-1. Open a new Terminal window.
-2. Install a small test package:
+1. Close the Terminal window that you used for the setup.
+   Open a new Terminal window.
+   Only a new window loads the wrapper.
+2. Check that the wrapper is loaded:
+
+   ```sh
+   type brew
+   ```
+
+   You see `brew is a shell function`.
+   If you do not, type `source ~/.zshrc` and press Return.
+3. Install a small test package:
 
    ```sh
    brew install hello
    ```
 
-3. Type your password when `brew` asks for it.
+4. Type your password when `brew` asks for it.
    The first `brew` command can take one or two minutes.
    Homebrew updates itself first.
-4. Run the test package:
+5. Run the test package:
 
    ```sh
    hello
    ```
 
    You see `Hello, world!`.
+
+> **Warning:** Sometimes `brew` says that directories are "not writable".
+> It then shows a `sudo chown` command.
+> Do not run that command. It undoes the fix.
+> It means that the window does not have the wrapper.
+> Open a new Terminal window and try again.
 
 ![Install and run the hello package.](images/05-wrapper.gif)
 

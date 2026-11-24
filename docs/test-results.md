@@ -51,3 +51,25 @@ PASS
 NOTES
 
 - `sysadminctl` prints "No clear text password ... (will not allow user to use FDE)" when the password is passed with `-password`. This is expected and harmless for a hidden service account.
+
+ROUND 4 (single script, fixes after a manual test, 2026-11-25)
+
+Setup: fresh clone of `ghcr.io/cirruslabs/macos-tahoe-base:latest` (macOS 26.6.2, Homebrew 7.0.12). The repo is private, so the files were copied into the VM.
+
+PASS
+
+- `tests/tart-test.sh` from a fresh clone: ends with `PASS ownership`. New checks pass: the wrapper loads in a new login shell (admin and a second user); `brew doctor` through the wrapper shows no `sudo chown` advice; install and uninstall of `hello` through the wrapper.
+- `setup.sh` ends with `PASS a new Terminal window loads the wrapper`.
+- Manual test by the maintainer: `--check`, then the full interactive setup in a fresh VM, then the wrapper test. No problems.
+
+FINDINGS
+
+- A first manual test (private repo, files typed in by hand) ended with brew's "not writable ... `sudo chown -R admin /opt/homebrew`" advice. That text comes only from `brew doctor` and the pre-install check (`diagnostic.rb`, `check_access_directories`). It appears when a plain `brew` command runs as a non-owner, for example in a Terminal window opened before the wrapper was added. `brew list` and `brew --version` do not print it. The guide and `setup.sh` now tell the reader to open a new window and not to run that command.
+- Plain `brew doctor` as a non-owner prints the advice. The test uses this as a negative control.
+- Brew 7.0.12 prints a "taps are not trusted" warning for taps in the base image. A normal Mac may not see it. Not covered in the guide.
+
+NOT TESTED
+
+- `shellcheck` and `markdownlint` did not run on the host (CI runs them).
+- The `git clone` step (the repo is private).
+- GIFs and casts still show the old Part 5 wording. Re-record clip 05 after the public flip.

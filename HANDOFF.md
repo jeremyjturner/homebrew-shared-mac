@@ -41,7 +41,11 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 - Keep personal info out of the repo. Every commit is checked by local hooks (`.git/hooks/pre-commit`, `commit-msg`, patterns in the untracked `.git/hooks/private-patterns`). These hooks are not cloned: recreate them on any new clone. Do not use `--no-verify`.
 - Make the repo public only when the user says it is ready.
 
-## Next manual test (user)
+## Manual test status (2026-11-25)
+
+The user's second manual test (fresh VM, scripts copied in) worked with no issues after the wrapper fixes (new-window check in `setup.sh`, Part 5 note, extra checks in `tests/tart-test.sh`). Round 4 is in `docs/test-results.md`. Next: shellcheck/markdownlint in a VM, re-record clip 05, then the public flip (see steps below). The pre-public scan of files, history and casts was clean; the GIF frames still need a look.
+
+## Previous manual test instructions (user)
 
 Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirruslabs/macos-tahoe-base:latest hb-manual && tart run hb-manual`. Create a second admin user in System Settings (the guide says two admin accounts are needed), then follow `docs/getting-started.md`. The repo is private, so the `git clone` step will not work until it is public. Copy the repo into the VM another way for now.
 

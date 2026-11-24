@@ -324,6 +324,16 @@ final_check() {
   if sudo -u "$REAL_USER" "$BREW" --version >/dev/null 2>&1; then say "PASS  brew --version works for $REAL_USER"
   else say "FAIL  brew --version does not work for $REAL_USER"; fail=1; fi
   [[ -f $SHARE_DIR/brew-wrapper.zsh ]] && say "PASS  wrapper is in $SHARE_DIR" || { say "FAIL  wrapper is missing"; fail=1; }
+  # A new Terminal window must load the wrapper. Test it the same way: a fresh login shell.
+  if grep -qsF "$WRAPPER_LINE" "$REAL_HOME/.zshrc"; then
+    if sudo -u "$REAL_USER" -H /bin/zsh -ilc 'type brew' 2>/dev/null | grep -q 'shell function'; then
+      say "PASS  a new Terminal window loads the wrapper"
+    else
+      say "FAIL  a new Terminal window does not load the wrapper"; fail=1
+    fi
+  else
+    say "NOTE  the wrapper is not in $REAL_HOME/.zshrc, so plain brew commands will fail."
+  fi
   return $fail
 }
 
@@ -372,8 +382,11 @@ final_check; rc=$?
 
 say ""
 say "Next"
-say "  1. Open a new Terminal window, or run: source ~/.zshrc"
+say "  1. Close this Terminal window and open a new one."
+say "     Only a new window loads the wrapper. (Or run: source ~/.zshrc)"
 say "  2. Test it (this asks for YOUR password): brew update"
+say "     If brew says 'not writable' and shows 'sudo chown', do not run that command."
+say "     It means this window does not have the wrapper yet. Open a new window."
 say "  3. For each other person: log in as that person and run:"
 say "       echo '$WRAPPER_LINE' >> ~/.zshrc"
 say ""
