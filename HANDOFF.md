@@ -1,6 +1,6 @@
 # Handoff
 
-Folder: `homebrew-shared-mac` (matches the planned GitHub repo name). Not yet a git repo.
+Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes. Not yet public.
 
 ## Done
 
@@ -15,12 +15,13 @@ Folder: `homebrew-shared-mac` (matches the planned GitHub repo name). Not yet a 
 
 1. `tests/tart-test.sh` and `setup.sh --apply` have not been executed as scripts; the commands were tested by hand.
 2. **Screenshots** of the Tart test for visual reference: run the VM with graphics (`tart run hb-test`), capture the key steps, put images in `docs/images/`, reference them from the README and docs.
-3. GitHub (user to do): `gh auth login`; upload the signing public key as a *signing* key; enable "Keep my email addresses private" and "Block command line pushes that expose my email". Git `user.name` is not set yet.
-4. Create repo `homebrew-shared-mac`, branch protection requiring signed commits, pin Actions to SHAs.
+3. Done: GitHub login, signing key uploaded, email privacy settings, repo created (private).
+4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included). Also check what Dependabot opened, then pin Actions to SHAs.
 5. Drift-check workflow: scheduled Action that fetches <https://docs.brew.sh/Homebrew-for-Mac-Admins> plus FAQ/Installation pages, diffs against a stored snapshot, opens an issue on change; also scheduled Tart/latest-Homebrew re-test (needs a macOS runner).
 6. Not yet covered: macOS version matrix beyond 26.6.2, services alternative, brew.env path for HOMEBREW_* settings, uninstall section polish.
 
 ## Rules from the user
 
 - Use Tart for testing before making any change on this machine.
-- Keep personal info out of the repo.
+- Keep personal info out of the repo. Every commit is checked by local hooks (`.git/hooks/pre-commit`, `commit-msg`, patterns in the untracked `.git/hooks/private-patterns`). These hooks are not cloned: recreate them on any new clone. Do not use `--no-verify`.
+- Make the repo public only when the user says it is ready.
