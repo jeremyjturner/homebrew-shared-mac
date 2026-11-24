@@ -7,6 +7,7 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 - Tart tests (two rounds) passed: see `docs/test-results.md`.
 - Scaffolding: README, LICENSE (MIT, copyright "homebrew-shared-mac contributors"), CONTRIBUTING, SECURITY, `scripts/` (setup, verify, brew-wrapper.zsh), `tests/tart-test.sh`, CI (ShellCheck, markdownlint), Dependabot, issue template.
 - Wrapper read-only list was shortened to what tests showed works.
+- Actions pinned to SHAs (checkout v7.0.1, markdownlint-cli2-action v25.1.0).
 - shellcheck and markdownlint run clean inside the Tart VM (config in `.markdownlint-cli2.jsonc`).
 - License confirmed: MIT.
 - Host changes (user-approved): SSH signing key `~/.ssh/id_ed25519_signing`, global git signing config with the no-reply email, `gh` installed. Tart VM `hb-test` still exists (stopped).
@@ -16,7 +17,7 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 1. `tests/tart-test.sh` and `setup.sh --apply` have not been executed as scripts; the commands were tested by hand.
 2. **Screenshots** of the Tart test for visual reference: run the VM with graphics (`tart run hb-test`), capture the key steps, put images in `docs/images/`, reference them from the README and docs.
 3. Done: GitHub login, signing key uploaded, email privacy settings, repo created (private).
-4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included). Also check what Dependabot opened, then pin Actions to SHAs.
+4. At the public flip (needs public repo or GitHub Pro): apply branch protection (signed commits required, no force-push/deletion, admins included).
 5. Drift-check workflow: scheduled Action that fetches <https://docs.brew.sh/Homebrew-for-Mac-Admins> plus FAQ/Installation pages, diffs against a stored snapshot, opens an issue on change; also scheduled Tart/latest-Homebrew re-test (needs a macOS runner).
 6. Not yet covered: macOS version matrix beyond 26.6.2, services alternative, brew.env path for HOMEBREW_* settings, uninstall section polish.
 
