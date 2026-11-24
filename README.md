@@ -1,68 +1,163 @@
 # homebrew-shared-mac
 
-Share one Homebrew install between several macOS users without `/opt/homebrew is not writable` errors or permission juggling.
+Fix `Error: /opt/homebrew is not writable` when two or more people share one Mac.
 
-> **Status: draft.** The core flow was tested in a Tart VM (macOS 26.6.2, Homebrew 7.0.16). See [docs/test-results.md](docs/test-results.md). Test it in a VM before using it on a real machine.
+## Did you see this error?
 
-## The problem
-
-Two admin users share one Mac. Whoever last ran `sudo chown -R <me> /opt/homebrew` owns the prefix; the other user gets `Error: /opt/homebrew is not writable`.
-
-## The approach
-
-A dedicated hidden account, `homebrew`, owns `/opt/homebrew`. Every human runs `brew as-brew-user <command>`, which runs Homebrew as the owner after a normal sudo password prompt. A small shell function in each user's `~/.zshrc` does this automatically.
-
-## Quick start
-
-New to this? Follow the step-by-step [getting started guide](docs/getting-started.md). It has animated recordings of every step.
-
-```sh
-sudo ./scripts/setup.sh --check   # reads only; writes a report file
-sudo ./scripts/setup.sh           # asks, then creates the account and fixes ownership
+```text
+Error: /opt/homebrew is not writable
 ```
 
-The one script checks your Homebrew, fixes the owner, creates the hidden account (you choose the name and password), installs the wrapper for you, and writes a report file for your own AI agent. Each other user then adds the wrapper to their `~/.zshrc`; the script prints the command.
+You are in the right place.
+Do not run the `sudo chown` command that Homebrew shows.
+It fixes the problem for one person only.
+The next person gets the same error.
 
-Close all brew and Claude Code sessions before running setup. Never run `sudo brew`.
+## Why this happens
 
-## Threat model
+Homebrew keeps all its files in one folder: `/opt/homebrew`.
+That folder has one owner.
+Only the owner can install software with `brew`.
+When a second person uses the Mac, they are not the owner.
+So `brew` stops with the error.
+
+## The fix
+
+Homebrew's own guide for Mac administrators gives the answer:
+use one dedicated account to own the Homebrew folder,
+and run `brew` commands as that account.
+Read it here: [Homebrew for Mac Admins](https://docs.brew.sh/Homebrew-for-Mac-Admins).
+
+What that guide says:
+
+- Choose one account to own the Homebrew folder.
+  It can be a person's account or a dedicated account.
+- That account needs write access to the Homebrew folders.
+- Use `brew as-brew-user <command>` to run a command as the owner.
+  `brew` uses `sudo` to switch accounts.
+- Do not let independent users manage the same installation at the same time.
+- Homebrew gives no security guarantee when the users who can write to the folder are not trusted.
+
+This repository does that for you:
+
+- One script creates a hidden account. You choose its name and its password.
+- That account owns `/opt/homebrew`.
+- A small helper, the wrapper, goes in each person's `~/.zshrc`.
+  It sends `brew` commands to the hidden account.
+- Each person types their own password to install software.
+
+A copy of the Homebrew page is in [docs/upstream-snapshots](docs/upstream-snapshots/Homebrew-for-Mac-Admins.snapshot).
+A weekly check shows when the original page changes.
+
+## Choose your path
+
+### Path A: you already have the error
+
+Homebrew and two or more accounts exist.
+The folder has the wrong owner, or several owners.
+
+1. Open the [getting started guide](docs/getting-started.md).
+2. Start at Part 1.
+3. In Part 3, run the check first. It changes nothing.
+4. In Part 4, the script fixes the owner.
+
+### Path B: you set up a new Mac
+
+You want to avoid the problem from the start.
+
+1. Install Homebrew the normal way from [brew.sh](https://brew.sh), with your first account.
+2. Open the [getting started guide](docs/getting-started.md) and follow it.
+3. Do this before anyone runs `sudo chown` on the Homebrew folder.
+
+There is one guide for both paths for now.
+
+## Quick look
+
+```sh
+git clone https://github.com/jeremyjturner/homebrew-shared-mac.git
+cd homebrew-shared-mac
+sudo ./scripts/setup.sh --check   # reads only; writes a report file
+sudo ./scripts/setup.sh           # asks, then creates the account and fixes the owner
+```
+
+The script is the only script you need. It:
+
+- checks your Homebrew,
+- creates the hidden account,
+- changes the owner of `/opt/homebrew`,
+- adds the wrapper to your `~/.zshrc`,
+- writes a report file that you can give to your own AI agent.
+
+Each other person then adds the wrapper to their `~/.zshrc`. The script prints the command.
+After the setup, close the Terminal window and open a new one. Only a new window loads the wrapper.
+
+> **Warning:** The script changes who owns `/opt/homebrew`.
+> Close all `brew` commands and Claude Code sessions first.
+> Never run `sudo brew`.
+> We tested it in virtual machines. Read each step in the guide before you use it on a Mac that you need.
+
+## Details for administrators
+
+### Threat model
 
 | Choice | Why |
 | --- | --- |
-| Dedicated owner account | No human's daily session owns code the other user will later run with sudo. |
+| Dedicated owner account | No person's daily session owns code that another person later runs with sudo. |
 | Password-protected sudo kept | The sudo password prompt is the only real boundary. Tested: a wrong password installs nothing. |
 | No passwordless sudoers rule | It would remove that boundary. |
-| Not a group-writable prefix | Unsupported by Homebrew; drifts under umask 022; git "dubious ownership". |
+| Not a group-writable prefix | Homebrew does not support it. It drifts under umask 022. Git reports "dubious ownership". |
 
-Admin users can already become root, so this protects against accidents and drift, and against one user's session silently modifying code the other trusts. It does not defend against a malicious admin.
+Administrator users can already become root.
+This setup protects against accidents and drift,
+and against one user's session silently changing code that the other user trusts.
+It does not defend against a malicious administrator.
 
-## Known limits (tested)
+### The hidden account
 
-- Only `--prefix --cellar --repository --version list ls home` run directly as a non-owner. `info`, `search`, `outdated`, etc. need `as-brew-user`.
+The script creates one account to own `/opt/homebrew`. It is the dedicated owner that Homebrew's guide describes.
+
+- It is hidden, so it does not show on the login window.
+- Its shell is `/usr/bin/false`, so nobody can log in with it.
+- Its user ID is 600 or the next free number. Its type is administrator.
+  This lets apps (casks) install into `/Applications` and run installers that need `sudo`.
+  Homebrew's own example uses a standard account, which cannot do this.
+- You choose its name and its password. You rarely need the password again.
+
+### Known limits (tested)
+
+- Only `--prefix --cellar --repository --version list ls home` run directly as a non-owner. `info`, `search`, `outdated` and others need `as-brew-user`. The wrapper does this for you.
 - `git` inside `/opt/homebrew` fails for non-owners ("dubious ownership").
-- `HOMEBREW_*` variables are dropped; put settings in the owner's environment file.
-- `brew services` does not work: the hidden account has no GUI session, and root services need `sudo brew`.
-- Casks install owned by `homebrew`.
+- `HOMEBREW_*` variables are dropped. Put settings in the owner's environment file.
+- `brew services` does not work. The hidden account has no GUI session, and root services need `sudo brew`.
+- Casks install owned by the hidden account.
 - Upgrade the `claude-code` cask only with no Claude Code session open.
+- If `brew` shows "not writable" and a `sudo chown` command, the window does not have the wrapper. Do not run the command. Open a new Terminal window.
 
-## Rollback
+### Rollback
 
 ```sh
 sudo chown -R <your-user> /opt/homebrew
 ```
 
-Then remove the wrapper from `~/.zshrc`. To delete the account: `sudo sysadminctl -deleteUser homebrew`.
+Then remove the wrapper line from `~/.zshrc`.
+To delete the account: `sudo sysadminctl -deleteUser homebrew`
+(use the name that you chose).
 
-## Compatibility
+### Compatibility
 
 | macOS | Homebrew | Result |
 | --- | --- | --- |
-| 26.6.2 (Apple Silicon, Tart VM) | 7.0.16 | Passed |
+| 26.6.2 (Apple silicon, Tart VM) | 7.0.12 | Passed |
+| 26.6.2 (Apple silicon, Tart VM) | 7.0.16 | Passed (earlier rounds) |
 
-## Testing
+Other macOS versions are not tested yet.
 
-`tests/tart-test.sh` clones a Tart base VM and runs the setup there. See [docs/test-results.md](docs/test-results.md).
+### Testing
+
+`tests/tart-test.sh` clones a Tart base VM and runs the setup there.
+See [docs/test-results.md](docs/test-results.md).
 
 ## Contributing and security
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Licensed under [MIT](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+Licensed under [MIT](LICENSE).

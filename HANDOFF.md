@@ -46,7 +46,8 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protec
 - Pre-public checks done: private-pattern scan of files, history and casts; every GIF reviewed (frames sampled every 3 s).
 - Clean test from a real `git clone` (HTTPS) in a fresh VM passed: setup, new-window wrapper check, `brew install hello`, second user, ownership.
 - Clips 04 and 05 re-recorded (new "Next" text; `type brew` step). Clips 01-03, 06, 07 are unchanged and still match the guide.
-- Still open: shellcheck and markdownlint in a VM (not on the host); README rewrite; greenfield guide; the "taps are not trusted" warning in brew 7.0.12 (only seen with the base image's taps).
+- Why the hidden owner is an administrator (stated in the README): casks must install into `/Applications` (group `admin` can write there) and some need `sudo`. Source: the Mac Admins snapshot and test round 1 (rectangle landed owned by `homebrew:admin`). A standard owner has not been tested here.
+- README rewritten (two paths, Mac Admins summary). Still open: shellcheck and markdownlint in a VM (not on the host); README rewrite; greenfield guide; the "taps are not trusted" warning in brew 7.0.12 (only seen with the base image's taps).
 - Remember: the base image's admin has passwordless sudo; `docs/demo/prepare.sh` removes it so the clips show real prompts. A manual test VM needs the same removal to see real prompts.
 
 ## Manual test status (2026-11-25)
