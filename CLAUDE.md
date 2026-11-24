@@ -35,7 +35,7 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 - A full render takes about 5 minutes. Render **one clip first**: `python3 docs/demo/record.py 04-setup` (the VM must be prepared). Check that GIF before you render all.
 - Do not kill a render mid-run. The script's trap stops the VM, and you start over.
 - If a trim or speed problem appears, fix it from the saved casts. Do not re-render everything.
-- Wait on text in the output stream. Do not wait on screen pixels (VHS did, and it failed). Do not use a clock to find where to cut. Cut by content (the last `$ ` prompt).
+- Wait on text in the output stream. Do not wait on screen pixels (VHS did, and it failed). Do not use a clock to find where to cut. Cut by content (the last `$ ` prompt). <!-- markdownlint-disable-line MD038 -->
 - Clips that run in a nested shell (`su - bob`) need more than one `exit`.
 
 ## Shell gotchas on this Mac
