@@ -23,6 +23,8 @@ Private GitHub repo `homebrew-shared-mac`; CI (ShellCheck, markdownlint) passes.
 
 ## Open items to pick up
 
+- **User is verifying `docs/getting-started.md` by hand** and will report results next session. Fix any wrong or unclear steps first. Untested parts: the System Settings steps (Part 2) and `git clone` of the real address.
+
 - Dependabot PRs #1 and #2 are closed and their branches are gone.
 - Git remote is SSH (`git@github.com:...`); the signing key is registered for both signing and authentication.
 - Suggested next: guide for the problem state (existing users, Homebrew already installed); then item 6 coverage gaps.

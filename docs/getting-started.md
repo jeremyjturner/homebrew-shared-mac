@@ -304,16 +304,3 @@ Use these steps to go back to the old state.
    ```sh
    sudo sysadminctl -deleteUser homebrew
    ```
-
-## Make the animations again
-
-The animations come from the files in `docs/demo/`.
-You need Tart, a Tart base VM, and VHS (`brew install vhs`).
-Type this command in the repository folder:
-
-```sh
-docs/demo/render.sh
-```
-
-The command makes a new virtual machine and records all six animations.
-The command does not change your Mac.
