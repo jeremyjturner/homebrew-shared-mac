@@ -263,8 +263,7 @@ def clip_wrapper(s):
 
 
 def clip_second_user(s):
-    s.run("echo 'source /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh' >> ~/.zshrc")
-    s.run("source ~/.zshrc")
+    s.run("type brew")                    # Part 6, step 2: setup.sh already added the wrapper
     s.run("brew list")
     s.run("brew install tree", ["bobpw"])
 

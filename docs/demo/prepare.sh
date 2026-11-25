@@ -16,6 +16,8 @@ tart exec "$VM" sh -c "mkdir -p ~/homebrew-shared-mac && echo $(cat "${TMPDIR:-/
 rm -f "${TMPDIR:-/tmp}/hb-demo.b64"
 # The second user. Both users are admins with a password, like a real shared Mac.
 tart exec "$VM" sh -c 'sudo sysadminctl -addUser bob -fullName Bob -UID 502 -admin -password bobpw 2>/dev/null'
+# Bob has used Homebrew before (a brew line in his ~/.zshrc), so setup.sh adds the wrapper for him.
+tart exec "$VM" sh -c "echo 'eval \"\$(/opt/homebrew/bin/brew shellenv)\"' | sudo -u bob tee /Users/bob/.zshrc >/dev/null"
 # Remove the passwordless sudo of the base image so that password prompts are real.
 # The base image admin password is "admin".
 tart exec "$VM" sh -c 'sudo rm -f /etc/sudoers.d/admin-nopasswd'
