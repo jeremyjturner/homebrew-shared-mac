@@ -27,7 +27,6 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protec
 - `docs/getting-started.md` was rewritten for this flow (Parts 1-7, no Tart mentions). Still to do: README rewrite (Mac Admins summary and link, greenfield path vs. already-broken path, plain language), guide for the greenfield path, test-results round 4, shellcheck/markdownlint (not run on the host).
 - The `git clone` URL in the guide needs the repo to be public. The clip for Part 2 (`02-get-files`) shows steps 2 to 5 with a real clone from GitHub.
 - The pristine image's Homebrew is 7.0.12; `docs/test-results.md` still says 7.0.16 (from the old `tahoe-base`). Update the compatibility table after a new test round.
-- The user's own video `2026-11-24 23-46-35.mp4` sits untracked in the repo root. Do not commit it.
 - Dependabot PRs #1 and #2 are closed and their branches are gone.
 - Git remote is SSH (`git@github.com:...`); the signing key is registered for both signing and authentication.
 - Suggested next: guide for the problem state (existing users, Homebrew already installed); then item 6 coverage gaps.
@@ -126,6 +125,6 @@ Details of finished work:
 
 - First real-Mac run of the app-ownership fix passed: bambu-studio and chatgpt upgraded with no errors.
 - Each brew command in a chain asks for the user's password once. Homebrew 7 runs `sudo --reset-timestamp` on every user switch (`utils/sudo.sh`). This is by design. The user accepted it. No sudoers rule is added.
-- The last `sudo: a password is required` in the second chain is unexplained (probably brew running sudo as the hidden owner). Not tested.
-- A "find devices on local networks" prompt for `<unknown>` showed at logout. Not traced; probably an app whose owner changed (Bambu Studio or Elgato). `Don't Allow` is safe.
+- The last `sudo: a password is required` in the second chain was a mistyped password (user's report). No bug.
+- A "find devices on local networks" prompt for `<unknown>` showed at logout. Parked by the user; not traced.
 - New: `docs/llm-prompt.md` (Path C: a prompt for the user's own AI assistant), linked from README and getting-started. Not tested with a real assistant.
