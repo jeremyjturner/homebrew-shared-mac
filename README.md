@@ -127,7 +127,7 @@ The script creates one account to own `/opt/homebrew`. It is the dedicated owner
 
 - Only `--prefix --cellar --repository --version list ls home` run directly as a non-owner. `info`, `search`, `outdated` and others need `as-brew-user`. The wrapper does this for you.
 - `git` inside `/opt/homebrew` fails for non-owners ("dubious ownership").
-- `HOMEBREW_*` variables are dropped. Put settings in the owner's environment file.
+- `HOMEBREW_*` variables from your shell are dropped. Put settings in `/etc/homebrew/brew.env`, one `NAME=value` per line (tested with `HOMEBREW_NO_AUTO_UPDATE` and `HOMEBREW_NO_ANALYTICS`). Create the file with `sudo`.
 - `brew services` does not work. The hidden account has no GUI session, and root services need `sudo brew`.
 - Casks install owned by the hidden account.
 - Upgrade the `claude-code` cask only with no Claude Code session open.

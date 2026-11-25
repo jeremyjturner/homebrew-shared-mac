@@ -116,3 +116,19 @@ PASS
 NOT TESTED
 
 - The installer's prompts (Return key, sudo password) were skipped (no terminal; the base image has passwordless sudo). The Command Line Tools were already present.
+
+ROUND 8 (brew.env and rollback, 2026-11-25)
+
+Setup: the VM left by `tests/tart-test.sh` (base image, macOS 26.6.2, Homebrew 7.0.16, setup done).
+
+PASS
+
+- `/etc/homebrew/brew.env` with `HOMEBREW_NO_AUTO_UPDATE=1` and `HOMEBREW_NO_ANALYTICS=1`: `brew as-brew-user config` shows both as set. The README now names this file.
+- Rollback steps from the guide, as the admin: `chown -R`, wrapper line removed, `sysadminctl -deleteUser homebrew` (account and `/Users/homebrew` gone). Then `brew update`, `install` and `uninstall` work for the admin with no `sudo`. `find /opt/homebrew ! -user admin` is empty.
+- Left over after the first three steps: `/usr/local/share/homebrew-shared-mac`. The guide now has a step to remove it.
+- A second user who keeps the wrapper line in `~/.zshrc` still gets a working `brew` after rollback (`--version`, `install`). The wrapper is harmless.
+
+NOT TESTED
+
+- macOS versions other than 26.6.2 (no other Tart image was pulled).
+

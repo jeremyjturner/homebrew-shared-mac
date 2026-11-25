@@ -297,3 +297,12 @@ Use these steps to go back to the old state.
    ```sh
    sudo sysadminctl -deleteUser homebrew
    ```
+
+4. Remove the wrapper files:
+
+   ```sh
+   sudo rm -r /usr/local/share/homebrew-shared-mac
+   ```
+
+After these steps, Homebrew works as before for your account only.
+A second user must use `sudo` or ask you, as in any normal Homebrew install.
