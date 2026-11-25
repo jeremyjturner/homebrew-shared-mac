@@ -253,9 +253,6 @@ def clip_setup(s):
     s.expect(r"Make these changes now\?")
     time.sleep(7.0)                   # time to read the plan
     s.line("y")
-    s.expect(r"Add the brew wrapper")
-    time.sleep(1.5)
-    s.line("y")
     s.prompt()
 
 
