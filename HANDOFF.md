@@ -128,3 +128,14 @@ Details of finished work:
 - The last `sudo: a password is required` in the second chain was a mistyped password (user's report). No bug.
 - A "find devices on local networks" prompt for `<unknown>` showed at logout. Parked by the user; not traced.
 - New: `docs/llm-prompt.md` (Path C: a prompt for the user's own AI assistant), linked from README and getting-started. Not tested with a real assistant.
+
+## Security scan of `scripts/` (2026-11-25)
+
+A scan of `scripts/` found 4 MEDIUM issues. Each fix is on its own branch, not merged:
+
+- `fix/wrapper-install-symlink`: `install_wrapper` wrote `~/.zshrc` as root. It now writes as the account.
+- `fix/edit-file-symlink`: `edit_file` read and wrote user dotfiles as root. It now runs as the file's owner.
+- `fix/owner-password-argv`: the new owner's password was in the arguments of `sysadminctl` (any local account could read it; checked in a VM). `expect` now types it. `dscl -authonly` is replaced by a check for the password hash, because it stalled under `expect`.
+- `fix/wrapper-cwd-tmp`: the wrapper ran owner commands from `/tmp`, so a `Brewfile` planted there ran as the owner. It now uses `/var/empty`.
+
+Tested: all four merged in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
