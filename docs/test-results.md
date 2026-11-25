@@ -176,6 +176,8 @@ Found
 Fixed
 
 - `brew-wrapper.zsh` runs the owner-run commands from `/tmp`.
-- New check in `tests/tart-test.sh`: `brew update` through the wrapper from a mode-700 folder.
+- `setup.sh` now finds an out-of-date installed wrapper (`--check` reports it, the plan lists it, a normal run replaces it and says so).
+- `setup.sh --rollback` now skips empty and used backup folders. Before, a re-run that changed nothing (for example only a wrapper refresh) left an empty newest backup, and `--rollback` stopped with "No backup found". The new test steps exposed this.
+- New checks in `tests/tart-test.sh`: `brew update` through the wrapper from a mode-700 folder; `--check` flags a planted old wrapper; setup replaces it.
 
-Tart check: the full `tests/tart-test.sh` passed with the new check, before a last lint-only change (`if/else` instead of `&& ||`). That change was checked with `bash -n` and shellcheck only. The check was not run against the old wrapper to see it fail.
+Tart check: the full `tests/tart-test.sh` passed (52 PASS, 0 FAIL). One earlier run hung for about 8 minutes at `brew uninstall --cask rectangle` (a macOS Automation prompt for the login item, inside the VM) and was killed; the rerun did not hang. Not done: running the new private-folder check against the old wrapper to see it fail.

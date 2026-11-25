@@ -53,6 +53,11 @@ check "the temporary sudo rule is removed" '! test -e /etc/sudoers.d/homebrew-sh
 check "brew still manages the cask" '/opt/homebrew/bin/brew list --cask rectangle | grep -q "/Applications/Rectangle.app\|Rectangle.app"'
 check "old app is kept in the backup folder" 'sudo find /usr/local/share/homebrew-shared-mac/backups -name Rectangle.app | grep -q .'
 check "wrapper loads in a new login shell (bob)" 'sudo -u bob -H /bin/zsh -ilc "type brew" 2>/dev/null | grep -q "shell function"'
+# An old wrapper (for example one with the working-folder bug) must be found and replaced.
+x 'echo "# old wrapper" | sudo tee /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh >/dev/null'
+check "--check flags an out-of-date wrapper" 'cd /tmp && sudo ./setup.sh --check --report /tmp/report-stale.txt 2>&1 | grep -q "wrapper is out of date"'
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-stale2.txt"
+check "setup replaces the out-of-date wrapper" 'cmp -s /tmp/brew-wrapper.zsh /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh'
 # Negative control: plain brew doctor as a non-owner shows the misleading chown advice.
 check "control: plain brew doctor shows the chown advice" 'sudo -u bob -H /bin/zsh -c "/opt/homebrew/bin/brew doctor 2>&1" | grep -q "should change the ownership"'
 # shellcheck disable=SC2016  # \$PATH must expand in the VM, not here

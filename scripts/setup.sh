@@ -154,7 +154,12 @@ edit_file() {     # $1 = file, $2 = sed -E expression. Keeps the owner and mode 
 do_rollback() {
   local dir=$ROLLBACK_DIR kind a b c u
   if [[ -z $dir ]]; then
-    dir=$(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -name '2*' 2>/dev/null | sort | tail -1)
+    # The newest backup that has changes in it. A run that changed nothing leaves an empty one.
+    local d
+    for d in $(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -name '2*' 2>/dev/null | sort); do
+      case $d in *.rolled-back) continue ;; esac
+      [[ -s $d/manifest ]] && dir=$d
+    done
   fi
   [[ -n $dir && -s $dir/manifest ]] || die "No backup found in $BACKUP_ROOT. There is nothing to undo."
   case $dir in *.rolled-back) die "This backup was already used: $dir" ;; esac
@@ -265,6 +270,9 @@ diagnose() {
   for u in $WRAPPER_USERS; do
     grep -qsF "$WRAPPER_LINE" "$(user_home "$u")/.zshrc" || MISSING_WRAPPER="${MISSING_WRAPPER}${MISSING_WRAPPER:+ }$u"
   done
+  # An installed wrapper that differs from this repo's copy is old: it may have a known bug.
+  WRAPPER_STALE=0
+  [[ -f $SHARE_DIR/brew-wrapper.zsh ]] && ! cmp -s "$WRAPPER_SRC" "$SHARE_DIR/brew-wrapper.zsh" && WRAPPER_STALE=1
 
   # Decide the state.
   if [[ $PREFIX_PRESENT -eq 0 ]]; then
@@ -292,6 +300,7 @@ diagnose() {
     add_finding "The owner account cannot update or remove them there. The script moves them to /Applications."
   fi
   [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."
+  [[ $WRAPPER_STALE -eq 1 ]] && add_finding "The installed brew wrapper is out of date. An old wrapper can fail with 'The current working directory must exist to run brew'. The script replaces it."
   [[ $BREW_RUNNING -eq 1 ]] && add_finding "A brew command is running now. Close it before you make changes."
   [[ $CLAUDE_RUNNING -eq 1 ]] && add_finding "A Claude Code session is running${CLAUDE_USERS:+ (account: ${CLAUDE_USERS% })}. Close it before you make changes."
   while IFS=$'\t' read -r _ _ app; do
@@ -430,6 +439,9 @@ print_plan() {
   if [[ -n $MISSING_WRAPPER ]]; then
     n=$((n + 1)); say "  $n. Put the brew wrapper in $SHARE_DIR and add it to ~/.zshrc of: $MISSING_WRAPPER"
   fi
+  if [[ $WRAPPER_STALE -eq 1 ]]; then
+    n=$((n + 1)); say "  $n. Replace the old brew wrapper in $SHARE_DIR with the current one."
+  fi
   if [[ -n $APPDIR_USERS ]]; then
     n=$((n + 1)); say "  $n. Turn off the HOMEBREW_CASK_OPTS --appdir line (put '#' in front) for: $APPDIR_USERS"
   fi
@@ -479,6 +491,7 @@ apply() {
 install_wrapper_files() {
   install -d -m 755 "$SHARE_DIR"
   install -m 644 "$WRAPPER_SRC" "$SHARE_DIR/brew-wrapper.zsh"
+  if [[ ${WRAPPER_STALE:-0} -eq 1 ]]; then say "Replaced the old brew wrapper in $SHARE_DIR."; WRAPPER_STALE=0; fi
 }
 
 install_wrapper() {
@@ -583,7 +596,7 @@ if [[ $CHECK_ONLY -eq 1 || $STATE == none ]]; then
   exit 0
 fi
 
-if [[ $STATE == ready && -z $APPDIR_CASKS && -z $APPDIR_USERS && -z $MISSING_WRAPPER ]]; then
+if [[ $STATE == ready && -z $APPDIR_CASKS && -z $APPDIR_USERS && -z $MISSING_WRAPPER && $WRAPPER_STALE -eq 0 ]]; then
   say "Nothing to fix."
   OWNER=$OWNER_NOW
   install_wrapper_files

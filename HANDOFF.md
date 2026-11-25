@@ -115,4 +115,5 @@ Details of finished work:
 ## Wrapper working-folder fix (2026-11-25)
 
 - Real-Mac bug: `brew update` through the wrapper failed from a folder the owner account cannot enter ("The current working directory must exist to run brew"). Fix: the wrapper runs owner-run commands from `/tmp`. Regression check added to `tests/tart-test.sh`; see round 11 in `docs/test-results.md`.
-- Installed copies of the wrapper are not updated by git. Re-run `setup.sh`, or copy `scripts/brew-wrapper.zsh` to `/usr/local/share/homebrew-shared-mac/`. Not yet done on the maintainer's Mac (needs sudo). Existing users of the repo need the same step.
+- `setup.sh` now detects an out-of-date installed wrapper (`--check` reports it) and replaces it on a normal run. Rollback now picks the newest non-empty, unused backup. Not yet re-run on the maintainer's Mac (needs sudo): run `sudo ./scripts/setup.sh` there.
+- Flaky: `brew uninstall --cask rectangle` in the VM can hang on a macOS Automation prompt for the login item. Kill the run after 5 minutes of silence and rerun.
