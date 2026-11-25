@@ -117,3 +117,7 @@ Details of finished work:
 - Real-Mac bug: `brew update` through the wrapper failed from a folder the owner account cannot enter ("The current working directory must exist to run brew"). Fix: the wrapper runs owner-run commands from `/tmp`. Regression check added to `tests/tart-test.sh`; see round 11 in `docs/test-results.md`.
 - `setup.sh` now detects an out-of-date installed wrapper (`--check` reports it) and replaces it on a normal run. Rollback now picks the newest non-empty, unused backup. Not yet re-run on the maintainer's Mac (needs sudo): run `sudo ./scripts/setup.sh` there.
 - Flaky: `brew uninstall --cask rectangle` in the VM can hang on a macOS Automation prompt for the login item. Kill the run after 5 minutes of silence and rerun.
+
+## Real-Mac report: cask upgrade password prompt (2026-11-25, later)
+
+`brew upgrade --cask` failed for apps in `/Applications` that a person owns (the owner account cannot write; brew asks for its unknown sudo password). `setup.sh` now finds those apps and gives them to the owner (`find_foreign_apps`, `fix_foreign_apps`, rollback kind `app_chowned`). Tart run passed (round 12 in `docs/test-results.md`). Not committed yet. The user must run `sudo ./scripts/setup.sh` again on the real Mac, then `brew upgrade --cask` for `bambu-studio` and `chatgpt`. Also seen on the real Mac: the first `sudo` password was mistyped once (not a bug), and brew 7 warns that tap `openai/tools` is not trusted (Tart's own tap; the user's choice).

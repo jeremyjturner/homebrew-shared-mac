@@ -127,6 +127,22 @@ find_appdir_casks() {
   done
 }
 
+# Casks that brew installed into /Applications, but another account owns the app (a person
+# or root). The owner account cannot write there, so brew asks for the owner's sudo
+# password on update or remove, and nobody knows it. Prints: owner<TAB>cask<TAB>app path.
+find_foreign_apps() {
+  local l app o
+  [[ -d $PREFIX/Caskroom ]] || return 0
+  find "$PREFIX/Caskroom" -mindepth 3 -maxdepth 3 -type l -lname '/Applications/*' 2>/dev/null \
+    | while read -r l; do
+        app=$(readlink "$l"); [[ -d $app ]] || continue
+        o=$(stat -f %Su "$app" 2>/dev/null)
+        [[ -n $o ]] || continue
+        if [[ -n $OWNER_NOW ]] && is_service "$OWNER_NOW" && [[ $o == "$OWNER_NOW" ]]; then continue; fi
+        printf '%s\t%s\t%s\n' "$o" "$(echo "${l#"$PREFIX/Caskroom/"}" | cut -d/ -f1)" "$app"
+      done
+}
+
 # ---------- backup and rollback ----------
 # The manifest has one line per change: kind, then up to four values, separated by tabs.
 # Rollback reads it from the last line to the first.
@@ -169,6 +185,7 @@ do_rollback() {
   say "This will undo, in this order:"
   tail -r "$dir/manifest" | while IFS=$'\t' read -r kind a b c; do
     case $kind in
+      app_chowned)      say "  - give $a back its old owner '$b'" ;;
       app_moved)        say "  - put $c back (the cask '$b' returns to its old folder)" ;;
       appdir_disabled)  say "  - turn the HOMEBREW_CASK_OPTS line back on in $a" ;;
       wrapper_added)    say "  - remove the brew wrapper line from $a" ;;
@@ -182,6 +199,8 @@ do_rollback() {
 
   tail -r "$dir/manifest" | while IFS=$'\t' read -r kind a b c; do
     case $kind in
+      app_chowned)   # a=app path b=old owner c=old group
+        chown -R "$b:$c" "$a" && say "Gave $a back to '$b'." ;;
       app_moved)   # a=user b=cask c=original path; the saved app is in the backup folder
         "$BREW" as-brew-user uninstall --cask --force "$b" </dev/null >/dev/null 2>&1 \
           || warn "Could not remove the new copy of '$b'. Check /Applications."
@@ -222,7 +241,7 @@ diagnose() {
   local u home n
   MACOS=$(sw_vers -productVersion 2>/dev/null)
   ARCH=$(uname -m)
-  PREFIX_PRESENT=0; OWNER_NOW=""; GROUP_NOW=""; BREW_VERSION="not found"
+  PREFIX_PRESENT=0; OWNER_NOW=""; GROUP_NOW=""; BREW_VERSION="not found"; FOREIGN_APPS=""
   INSTALL_METHOD="not installed"; N_BAD=0; OWNER_HISTOGRAM=""; N_GROUP_WRITABLE=0
   STATE=none; BREW_RUNNING=0; CLAUDE_RUNNING=0
   N_HUMANS=0; N_USING=0; APPDIR_USERS=""; APPDIR_CASKS=""; WRAPPER_USERS=$REAL_USER
@@ -244,6 +263,7 @@ diagnose() {
     OWNER_HISTOGRAM=$(find "$PREFIX" -print0 2>/dev/null | xargs -0 stat -f '%Su' 2>/dev/null | sort | uniq -c | sort -rn)
     N_GROUP_WRITABLE=$(find "$PREFIX" -perm -g+w 2>/dev/null | wc -l | tr -d ' ')
     APPDIR_CASKS=$(find_appdir_casks | sort -u)
+    FOREIGN_APPS=$(find_foreign_apps | sort -u)
   fi
 
   pgrep -x brew >/dev/null 2>&1 && BREW_RUNNING=1
@@ -298,6 +318,10 @@ diagnose() {
     if [[ $n_apps -eq 1 ]]; then app_word="cask app is"; else app_word="cask apps are"; fi
     add_finding "$n_apps $app_word in a user's ~/Applications: $(printf '%s\n' "$APPDIR_CASKS" | cut -f2 | sort -u | tr '\n' ' ')"
     add_finding "The owner account cannot update or remove them there. The script moves them to /Applications."
+  fi
+  if [[ -n $FOREIGN_APPS ]]; then
+    add_finding "Brew apps in /Applications that another account owns: $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | sort -u | tr '\n' ' ')"
+    add_finding "Without a fix, brew asks for a password that nobody knows when it updates them. The script gives them to '${OWNER_NOW:-the hidden account}'."
   fi
   [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."
   [[ $WRAPPER_STALE -eq 1 ]] && add_finding "The installed brew wrapper is out of date. An old wrapper can fail with 'The current working directory must exist to run brew'. The script replaces it."
@@ -452,6 +476,12 @@ print_plan() {
     done <<<"$APPDIR_CASKS"
     say "     The old apps are kept in the backup folder. Apps that brew did not install stay where they are."
   fi
+  if [[ -n $FOREIGN_APPS ]]; then
+    n=$((n + 1)); say "  $n. Give these apps in /Applications to '$OWNER', so brew can update them:"
+    while IFS=$'\t' read -r u cask app; do
+      [[ -n $app ]] && say "       $cask  ($app, now owned by $u)"
+    done <<<"$FOREIGN_APPS"
+  fi
   n=$((n + 1)); say "  $n. Check the result."
   say "Every change is saved in $BACKUP_ROOT."
   say "Undo everything: sudo $0 --rollback"
@@ -485,6 +515,7 @@ apply() {
   install_wrapper
   disable_appdir_lines
   [[ -n $APPDIR_CASKS ]] && migrate_apps
+  fix_foreign_apps
   return 0
 }
 
@@ -549,6 +580,20 @@ migrate_apps() {
   rm -f "$rule"
 }
 
+fix_foreign_apps() {
+  local o cask app g
+  while IFS=$'\t' read -r o cask app; do
+    [[ -n $app && -d $app ]] || continue
+    g=$(stat -f %Sg "$app")
+    if chown -R "$OWNER:admin" "$app"; then
+      record app_chowned "$app" "$o" "$g"
+      say "Gave $app to '$OWNER'."
+    else
+      warn "Could not change the owner of $app."
+    fi
+  done <<<"$FOREIGN_APPS"
+}
+
 final_check() {
   local fail=0 bad
   bad=$(find "$PREFIX" ! -user "$OWNER" 2>/dev/null | head -3)
@@ -570,6 +615,9 @@ final_check() {
   fi
   if [[ -z $APPDIR_CASKS && -z $APPDIR_USERS ]]; then say "PASS  no --appdir setting and no brew app in a ~/Applications folder"
   else say "FAIL  an --appdir setting or a brew app is still in a ~/Applications folder"; fail=1; fi
+  FOREIGN_APPS=$(find_foreign_apps | sort -u)
+  if [[ -z $FOREIGN_APPS ]]; then say "PASS  '$OWNER' owns every brew app in /Applications"
+  else say "FAIL  another account owns these brew apps: $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | tr '\n' ' ')"; fail=1; fi
   return $fail
 }
 
@@ -596,7 +644,7 @@ if [[ $CHECK_ONLY -eq 1 || $STATE == none ]]; then
   exit 0
 fi
 
-if [[ $STATE == ready && -z $APPDIR_CASKS && -z $APPDIR_USERS && -z $MISSING_WRAPPER && $WRAPPER_STALE -eq 0 ]]; then
+if [[ $STATE == ready && -z $APPDIR_CASKS && -z $APPDIR_USERS && -z $FOREIGN_APPS && -z $MISSING_WRAPPER && $WRAPPER_STALE -eq 0 ]]; then
   say "Nothing to fix."
   OWNER=$OWNER_NOW
   install_wrapper_files

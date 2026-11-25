@@ -58,6 +58,14 @@ x 'echo "# old wrapper" | sudo tee /usr/local/share/homebrew-shared-mac/brew-wra
 check "--check flags an out-of-date wrapper" 'cd /tmp && sudo ./setup.sh --check --report /tmp/report-stale.txt 2>&1 | grep -q "wrapper is out of date"'
 x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-stale2.txt"
 check "setup replaces the out-of-date wrapper" 'cmp -s /tmp/brew-wrapper.zsh /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh'
+# Regression: an app in /Applications that a person owns (installed by an old setup). The owner
+# account cannot write there, so brew asked for a sudo password that nobody knows.
+x 'sudo chown -R bob /Applications/Rectangle.app'
+check "--check flags a brew app that another account owns" 'cd /tmp && sudo ./setup.sh --check --report /tmp/report-foreign.txt 2>&1 | grep -q "another account owns"'
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-foreign2.txt"
+# shellcheck disable=SC2016  # $(stat) must run in the VM, not here
+check "setup gives the app to the hidden account" 'test "$(stat -f %Su /Applications/Rectangle.app)" = homebrew'
+check "brew can reinstall the app without a sudo password" 'cd /tmp && /opt/homebrew/bin/brew as-brew-user reinstall --cask rectangle < /dev/null'
 # Negative control: plain brew doctor as a non-owner shows the misleading chown advice.
 check "control: plain brew doctor shows the chown advice" 'sudo -u bob -H /bin/zsh -c "/opt/homebrew/bin/brew doctor 2>&1" | grep -q "should change the ownership"'
 # shellcheck disable=SC2016  # \$PATH must expand in the VM, not here
@@ -83,6 +91,8 @@ check "documented dscl password reset works" "sudo dscl . -passwd /Users/homebre
 x 'sudo rm /etc/sudoers.d/zz-test'
 if [ -z "$(x 'find /opt/homebrew ! -user homebrew | head -1')" ]; then echo "PASS ownership"; else echo "FAIL ownership"; exit 1; fi
 # Script rollback: undoes the account, owner, wrapper lines, --appdir line and moved apps.
+# The newest backup is the app-owner change; the second rollback undoes the main setup.
+x "cd /tmp && sudo ./setup.sh --rollback --yes"
 x "cd /tmp && sudo ./setup.sh --rollback --yes"
 check "script rollback: the old app is back in bob's ~/Applications" 'test -d /Users/bob/Applications/Rectangle.app'
 check "script rollback: hidden account is gone" '! dscl . -read /Users/homebrew >/dev/null 2>&1'

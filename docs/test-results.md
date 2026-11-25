@@ -181,3 +181,16 @@ Fixed
 - New checks in `tests/tart-test.sh`: `brew update` through the wrapper from a mode-700 folder; `--check` flags a planted old wrapper; setup replaces it.
 
 Tart check: the full `tests/tart-test.sh` passed (52 PASS, 0 FAIL). One earlier run hung for about 8 minutes at `brew uninstall --cask rectangle` (a macOS Automation prompt for the login item, inside the VM) and was killed; the rerun did not hang. Not done: running the new private-folder check against the old wrapper to see it fail.
+
+## Round 12 (real-Mac report: cask upgrade asks for a password)
+
+Found
+
+- On a real Mac, `brew upgrade --cask` through the wrapper asked for a `sudo` password three times and failed for two apps (`bambu-studio`, `chatgpt`): `sudo -E -- touch /Applications/NAME.app/.homebrew-write-test` exited with 1. Those apps were owned by the person (mode 755), so the hidden owner account could not write to them. Brew then asks for the owner's password, and nobody knows it. The first checks only looked at `/opt/homebrew` and `~/Applications`.
+
+Fixed
+
+- `setup.sh` finds brew apps in `/Applications` that another account owns (`--check` reports them, the plan lists them) and gives them to the owner account. The change is saved in the backup and `--rollback` gives the old owner back (`app_chowned`). The final check has a new PASS line.
+- New checks in `tests/tart-test.sh`: a person-owned app is flagged, setup fixes the owner, and `brew reinstall --cask` then works with no password. The script rollback runs twice (the newest backup is the owner change, then the main setup).
+
+Tart check: the full `tests/tart-test.sh` passed (64 PASS, 0 FAIL). The known cask-uninstall hang appeared once and cleared by itself. Not done: the check against the old script to see it fail.
