@@ -176,6 +176,15 @@ The script also does these steps for you, and the plan lists them:
   It also tells you which account has the app open.
   Quit the app in that account and run the script again.
 
+After the script moves an app, its icon in the Dock can show a question mark.
+The Dock still points to the old place.
+Fix it in each account that had the app in the Dock:
+
+1. Drag the icon with the question mark out of the Dock.
+2. Open the app from the `/Applications` folder.
+3. Right-click the app icon in the Dock.
+4. Choose **Options**, then **Keep in Dock**.
+
 The script saves every change in `/usr/local/share/homebrew-shared-mac/backups`.
 To undo all of it, go to [Rollback](#rollback).
 
@@ -336,6 +345,9 @@ It does these things, from the last change to the first:
 - It removes the wrapper lines it added.
 - It gives `/opt/homebrew` back to the account that owned it.
 - It deletes the hidden account, if the script made it.
+
+A Dock icon of a moved app shows a question mark again.
+Drag it out of the Dock and add the app again from `~/Applications`.
 
 Homebrew does not manage the apps that go back to `~/Applications`.
 Install them again with `brew install --cask --appdir=~/Applications NAME`

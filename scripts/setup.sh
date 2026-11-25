@@ -624,7 +624,10 @@ say "     It means this window does not have the wrapper yet. Open a new window.
 say "  3. Tell the other people to open a new Terminal window too."
 say "     The script already added the wrapper to their ~/.zshrc."
 if [[ -s $BACKUP/manifest ]] && grep -q '^app_moved' "$BACKUP/manifest"; then
-  say "  4. Old copies of the moved apps are in $BACKUP/apps."
+  say "  4. A moved app in the Dock now shows a question mark."
+  say "     Drag the icon out of the Dock. Then open the app from /Applications"
+  say "     and choose Options > Keep in Dock. Do this in each account."
+  say "  5. Old copies of the moved apps are in $BACKUP/apps."
   say "     Delete that folder when the new apps work."
 fi
 say ""
