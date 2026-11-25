@@ -131,4 +131,3 @@ PASS
 NOT TESTED
 
 - macOS versions other than 26.6.2 (no other Tart image was pulled).
-
