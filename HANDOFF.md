@@ -97,4 +97,10 @@ Details of finished work:
 - Result: setup failed on Steam. Brew runs as the hidden account, and Steam's uninstall calls `sudo`. Fix: `migrate_apps` writes a temporary `/etc/sudoers.d/homebrew-shared-mac-temp` rule for the owner, removed at the end and by an EXIT trap. `tests/tart-test.sh` now installs Steam; it fails with the old script and passes with the new one (round 9).
 - `--check` and the open-app error now name the account (`ps` user). Guide mentions the "Terminal would like to administer your computer" window.
 - Real Mac state after the failed run: the hidden account and owner change were done; Steam stayed in `~/Applications` and brew's Steam record may be half removed. The user should run `sudo ./scripts/setup.sh --rollback` or check `brew list --cask`, quit Firefox and Claude Code in both accounts, then run the new script.
-- Open: re-record clip 04 (new popup step), a failed reinstall should leave a clear message about the cask's brew state.
+- Open: a failed reinstall should leave a clear message about the cask's brew state.
+
+## Session end (2026-11-25, after the Steam fix)
+
+- Pushed: `e2e89a3` (sudo fix, account names, docs, round 9) and `5173b88`, `ceb1380` (clips 03, 04, 06 re-recorded; `prepare.sh` now makes bob a Homebrew user, `record.py` clip 06 starts with `type brew`). Clips 04 and 06 match the current script. Clip 05 is unchanged.
+- Next: the user runs the new script on the real Mac and brings the results back. Steps: `sudo ./scripts/setup.sh --rollback` (or check `brew list --cask`), quit Firefox and Claude Code in both accounts, `sudo ./scripts/setup.sh --check`, then `sudo ./scripts/setup.sh`. Things to look at in the results: the Steam move with no password prompt, the temporary rule `/etc/sudoers.d/homebrew-shared-mac-temp` is gone, the account names in `--check`, the final PASS lines.
+- Open: CI result for the pushed commits not checked; a failed reinstall message; the "administer your computer" window cannot be tested in Tart.
