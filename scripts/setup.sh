@@ -1,19 +1,25 @@
 #!/bin/bash
 # Share one Homebrew installation between several macOS users.
 #
-# This is the only script you need. It does three things:
+# This is the only script you need. It does these things:
 #   1. Checks Homebrew, finds the problem, and fixes it (wrong owner, mixed owners).
 #   2. Creates the hidden account that owns Homebrew. You choose the name.
 #      The script sets a random password that nobody sees (no one logs in with it).
-#   3. Writes a report file that you can give to your own AI agent to troubleshoot.
+#   3. Adds the brew wrapper to every account that uses Homebrew.
+#   4. Turns off HOMEBREW_CASK_OPTS="--appdir=..." (brew ignores it now) and moves
+#      the apps that brew put in a user's ~/Applications to /Applications.
+#   5. Writes a report file that you can give to your own AI agent.
+# Every change is saved in a backup folder. --rollback undoes all of it.
 #
 # Usage:
-#   sudo ./scripts/setup.sh           check, show the plan, ask, then change
-#   sudo ./scripts/setup.sh --check   check and write the report; change nothing
+#   sudo ./scripts/setup.sh              check, show the plan, ask, then change
+#   sudo ./scripts/setup.sh --check      check and write the report; change nothing
+#   sudo ./scripts/setup.sh --rollback   undo the last run of this script
 #
 # Options:
 #   --owner NAME       name of the owner account (default: homebrew)
 #   --report FILE      where to write the report
+#   --backup DIR       with --rollback: use this backup folder (default: the newest)
 #   --yes              do not ask questions (for tests)
 set -u -o pipefail
 
@@ -22,11 +28,16 @@ BREW=$PREFIX/bin/brew
 OWNER=""
 FIRST_UID=600
 SHARE_DIR=/usr/local/share/homebrew-shared-mac
+BACKUP_ROOT=$SHARE_DIR/backups
+BACKUP=""
 HERE=$(cd "$(dirname "$0")" && pwd)
 WRAPPER_SRC=$HERE/brew-wrapper.zsh
 WRAPPER_LINE="source $SHARE_DIR/brew-wrapper.zsh"
+DISABLED_MARK="# homebrew-shared-mac disabled: "
 CHECK_ONLY=0
 ASSUME_YES=0
+ROLLBACK=0
+ROLLBACK_DIR=""
 REPORT=""
 
 say()  { printf '%s\n' "$*"; }
@@ -43,9 +54,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) CHECK_ONLY=1 ;;
     --yes) ASSUME_YES=1 ;;
+    --rollback) ROLLBACK=1 ;;
+    --backup) shift; ROLLBACK_DIR=${1:-} ;;
     --owner) shift; OWNER=${1:-} ;;
     --report) shift; REPORT=${1:-} ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
     *) die "Unknown option: $1" ;;
   esac
   shift
@@ -86,6 +99,114 @@ brew_in_shell_files() {   # does this home folder set up brew?
   return 1
 }
 
+# Does this home folder set HOMEBREW_CASK_OPTS with --appdir? The brew wrapper runs
+# brew as the owner account with a clean environment, so this setting is ignored.
+# Prints "file: line" for each match.
+appdir_setting() {
+  local f
+  for f in .zshrc .zprofile .zshenv .bash_profile .profile; do
+    grep -sE '^[[:space:]]*(export[[:space:]]+)?HOMEBREW_CASK_OPTS=.*appdir' "$1/$f" 2>/dev/null \
+      | sed "s|^|$f: |"
+  done
+}
+
+# Casks that brew installed into a user's ~/Applications. Homebrew keeps a symlink in
+# the Caskroom that points to each installed app. Prints: user<TAB>cask<TAB>app path.
+find_appdir_casks() {
+  local u home l
+  [[ -d $PREFIX/Caskroom ]] || return 0
+  for u in $(all_accounts); do
+    home=$(user_home "$u")
+    [[ -d $home/Applications ]] || continue
+    find "$PREFIX/Caskroom" -mindepth 3 -maxdepth 3 -type l -lname "$home/Applications/*" 2>/dev/null \
+      | while read -r l; do
+          printf '%s\t%s\t%s\n' "$u" "$(echo "${l#"$PREFIX/Caskroom/"}" | cut -d/ -f1)" "$(readlink "$l")"
+        done
+  done
+}
+
+# ---------- backup and rollback ----------
+# The manifest has one line per change: kind, then up to four values, separated by tabs.
+# Rollback reads it from the last line to the first.
+record() { printf '%s\t%s\t%s\t%s\n' "$1" "${2:--}" "${3:--}" "${4:--}" >>"$BACKUP/manifest"; }
+
+start_backup() {
+  [[ -z $BACKUP ]] || return 0
+  BACKUP=$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)
+  install -d -m 755 "$SHARE_DIR"
+  install -d -m 700 "$BACKUP_ROOT" "$BACKUP" "$BACKUP/files" "$BACKUP/apps"
+  : >"$BACKUP/manifest"
+}
+
+backup_file() {   # copy a file into the backup folder before it is changed
+  cp -p "$1" "$BACKUP/files/$(printf '%s' "$1" | tr '/' '_')"
+}
+
+edit_file() {     # $1 = file, $2 = sed -E expression. Keeps the owner and mode of the file.
+  local tmp
+  tmp=$(mktemp) || return 1
+  sed -E "$2" "$1" >"$tmp" && cat "$tmp" >"$1"
+  rm -f "$tmp"
+}
+
+do_rollback() {
+  local dir=$ROLLBACK_DIR kind a b c u
+  if [[ -z $dir ]]; then
+    dir=$(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -name '2*' 2>/dev/null | sort | tail -1)
+  fi
+  [[ -n $dir && -s $dir/manifest ]] || die "No backup found in $BACKUP_ROOT. There is nothing to undo."
+  case $dir in *.rolled-back) die "This backup was already used: $dir" ;; esac
+  pgrep -x brew >/dev/null 2>&1 && die "A brew command is running. Close it, then run the rollback again."
+
+  say "Rollback from $dir"
+  say "This will undo, in this order:"
+  tail -r "$dir/manifest" | while IFS=$'\t' read -r kind a b c; do
+    case $kind in
+      app_moved)        say "  - put $c back (the cask '$b' returns to its old folder)" ;;
+      appdir_disabled)  say "  - turn the HOMEBREW_CASK_OPTS line back on in $a" ;;
+      wrapper_added)    say "  - remove the brew wrapper line from $a" ;;
+      owner_before)     say "  - give $PREFIX back to '$a'" ;;
+      account_created)  say "  - delete the hidden account '$a' and its home folder" ;;
+    esac
+  done
+  say "Brew will not manage the apps that go back to ~/Applications until you reinstall them."
+  say ""
+  ask "Undo these changes now?" || { say "Nothing was changed."; exit 0; }
+
+  tail -r "$dir/manifest" | while IFS=$'\t' read -r kind a b c; do
+    case $kind in
+      app_moved)   # a=user b=cask c=original path; the saved app is in the backup folder
+        "$BREW" as-brew-user uninstall --cask --force "$b" </dev/null >/dev/null 2>&1 \
+          || warn "Could not remove the new copy of '$b'. Check /Applications."
+        if [[ -e $c ]]; then
+          warn "$c already exists. The old app stays in $dir/apps."
+        else
+          mv "$dir/apps/$a/$b/$(basename "$c")" "$c" && say "Put back $c"
+        fi ;;
+      appdir_disabled)
+        edit_file "$a" "s|^${DISABLED_MARK}||" && say "Turned the setting back on in $a" ;;
+      wrapper_added)
+        edit_file "$a" '\|homebrew-shared-mac/brew-wrapper.zsh|d' && say "Removed the wrapper line from $a" ;;
+      owner_before)
+        chown -R "$a:$b" "$PREFIX" && chmod -R g+w "$PREFIX" && say "Gave $PREFIX back to '$a'." ;;
+      account_created)
+        sysadminctl -deleteUser "$a" >/dev/null 2>&1
+        if user_exists "$a"; then warn "Could not delete the account '$a'."; else say "Deleted the hidden account '$a'."; fi ;;
+    esac
+  done
+
+  # Remove the wrapper file only when no account still uses it.
+  local still=0
+  for u in $(all_accounts); do
+    grep -qs 'homebrew-shared-mac/brew-wrapper.zsh' "$(user_home "$u")/.zshrc" && still=1
+  done
+  [[ $still -eq 0 ]] && rm -f "$SHARE_DIR/brew-wrapper.zsh"
+  mv "$dir" "$dir.rolled-back"
+  say ""
+  say "Done. Open a new Terminal window in each account."
+  say "The backup is now $dir.rolled-back (delete it when you do not need it)."
+}
+
 # ---------- 1. check ----------
 FINDINGS=""
 add_finding() { FINDINGS="${FINDINGS}  - $*"$'\n'; }
@@ -97,7 +218,7 @@ diagnose() {
   PREFIX_PRESENT=0; OWNER_NOW=""; GROUP_NOW=""; BREW_VERSION="not found"
   INSTALL_METHOD="not installed"; N_BAD=0; OWNER_HISTOGRAM=""; N_GROUP_WRITABLE=0
   STATE=none; BREW_RUNNING=0; CLAUDE_RUNNING=0
-  N_HUMANS=0; N_USING=0
+  N_HUMANS=0; N_USING=0; APPDIR_USERS=""; APPDIR_CASKS=""; WRAPPER_USERS=$REAL_USER
 
   if [[ -d $PREFIX ]]; then
     PREFIX_PRESENT=1
@@ -115,6 +236,7 @@ diagnose() {
     N_BAD=$(find "$PREFIX" ! -user "$OWNER_NOW" 2>/dev/null | wc -l | tr -d ' ')
     OWNER_HISTOGRAM=$(find "$PREFIX" -print0 2>/dev/null | xargs -0 stat -f '%Su' 2>/dev/null | sort | uniq -c | sort -rn)
     N_GROUP_WRITABLE=$(find "$PREFIX" -perm -g+w 2>/dev/null | wc -l | tr -d ' ')
+    APPDIR_CASKS=$(find_appdir_casks | sort -u)
   fi
 
   pgrep -x brew >/dev/null 2>&1 && BREW_RUNNING=1
@@ -126,7 +248,19 @@ diagnose() {
     home=$(user_home "$u")
     if [[ -d $home ]] && { brew_in_shell_files "$home" || [[ -d $home/Library/Caches/Homebrew ]]; }; then
       N_USING=$((N_USING + 1))
+      add_wrapper_user "$u"
     fi
+    if [[ -d $home && -n $(appdir_setting "$home") ]]; then
+      APPDIR_USERS="${APPDIR_USERS}${APPDIR_USERS:+ }$u"
+      add_wrapper_user "$u"
+    fi
+  done
+  while IFS=$'\t' read -r u _; do
+    [[ -n $u ]] && add_wrapper_user "$u"
+  done <<<"$APPDIR_CASKS"
+  MISSING_WRAPPER=""
+  for u in $WRAPPER_USERS; do
+    grep -qsF "$WRAPPER_LINE" "$(user_home "$u")/.zshrc" || MISSING_WRAPPER="${MISSING_WRAPPER}${MISSING_WRAPPER:+ }$u"
   done
 
   # Decide the state.
@@ -147,9 +281,19 @@ diagnose() {
     [[ $N_BAD -gt 0 ]] && add_finding "$N_BAD file(s) have a different owner than '$OWNER_NOW' (mixed owners)."
   fi
   [[ $N_USING -gt 1 && $STATE == problem ]] && add_finding "$N_USING people use Homebrew on this Mac, so they will collide."
+  [[ -n $APPDIR_USERS ]] && add_finding "HOMEBREW_CASK_OPTS sets --appdir for: $APPDIR_USERS. Brew ignores it after the fix. The script turns it off."
+  if [[ -n $APPDIR_CASKS ]]; then
+    add_finding "$(printf '%s\n' "$APPDIR_CASKS" | wc -l | tr -d ' ') cask app(s) are in a user's ~/Applications: $(printf '%s\n' "$APPDIR_CASKS" | cut -f2 | sort -u | tr '\n' ' ')"
+    add_finding "The owner account cannot update or remove them there. The script moves them to /Applications."
+  fi
+  [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."
   [[ $BREW_RUNNING -eq 1 ]] && add_finding "A brew command is running now. Close it before you make changes."
   [[ $CLAUDE_RUNNING -eq 1 ]] && add_finding "A Claude Code session is running. Close it before you make changes."
   [[ $ARCH == arm64 ]] || add_finding "This is not an Apple silicon Mac ($ARCH). This project supports $PREFIX only."
+}
+
+add_wrapper_user() {   # add $1 to WRAPPER_USERS once
+  case " $WRAPPER_USERS " in *" $1 "*) ;; *) WRAPPER_USERS="$WRAPPER_USERS $1" ;; esac
 }
 
 write_report() {   # $1 = title of this snapshot
@@ -180,6 +324,7 @@ write_report() {   # $1 = title of this snapshot
     echo "Claude Code running: $CLAUDE_RUNNING"
     echo "sudo rules with NOPASSWD: $(grep -rlE 'NOPASSWD' /etc/sudoers /etc/sudoers.d 2>/dev/null | wc -l | tr -d ' ') file(s)"
     echo "wrapper installed system-wide: $([[ -f $SHARE_DIR/brew-wrapper.zsh ]] && echo yes || echo no)"
+    echo "backup folder: ${BACKUP:-none}"
     echo
     echo "-- Accounts (UID 500 and higher) --"
     printf '%-20s %-6s %-6s %-8s %-14s %s\n' account uid admin hidden brew-in-shell wrapper-in-zshrc
@@ -191,6 +336,20 @@ write_report() {   # $1 = title of this snapshot
         "$(is_hidden "$u" && echo yes || echo no)" \
         "$([[ -d $home ]] && brew_in_shell_files "$home" && echo yes || echo no)" \
         "$(grep -qs 'homebrew-shared-mac/brew-wrapper.zsh' "$home/.zshrc" && echo yes || echo no)"
+    done
+    echo
+    echo "-- HOMEBREW_CASK_OPTS with --appdir (brew ignores it) --"
+    for u in $(all_accounts); do
+      home=$(user_home "$u")
+      [[ -d $home ]] && appdir_setting "$home" | sed "s/^/  $u  /"
+      [[ -d $home ]] && grep -sE "^${DISABLED_MARK}" "$home/.zshrc" | sed "s/^/  $u  (turned off) /"
+    done
+    echo "cask apps still in a user's ~/Applications (cask, app):"
+    printf '%s\n' "$APPDIR_CASKS" | awk -F'\t' 'NF {print "  " $1 "  " $2 "  " $3}'
+    echo "other apps in ~/Applications (not managed by brew):"
+    for u in $(all_accounts); do
+      home=$(user_home "$u")
+      [[ -d $home/Applications ]] && find "$home/Applications" -maxdepth 1 -name '*.app' 2>/dev/null | sed 's/^/  /'
     done
     echo
     echo "-- Result --"
@@ -248,22 +407,39 @@ make_password() {
 }
 
 print_plan() {
+  local n=0 u
   say "Plan"
   if [[ $CREATE_OWNER -eq 1 ]]; then
-    say "  1. Create the administrator account '$OWNER' (UID $(next_free_uid)) with a random password."
-    say "  2. Hide it and set its shell to /usr/bin/false (nobody can log in with it)."
+    n=$((n + 1)); say "  $n. Create the administrator account '$OWNER' (UID $(next_free_uid)) with a random password."
+    n=$((n + 1)); say "  $n. Hide it and set its shell to /usr/bin/false (nobody can log in with it)."
   else
-    say "  1. Use the existing hidden account '$OWNER'."
+    n=$((n + 1)); say "  $n. Use the existing hidden account '$OWNER'."
   fi
-  say "  3. Run: chown -R $OWNER:admin $PREFIX ; chmod -R g-w,o-w $PREFIX"
-  say "  4. Put the brew wrapper in $SHARE_DIR and add it to $REAL_USER's ~/.zshrc."
-  say "  5. Check the result."
-  say "Undo: sudo chown -R <your-user> $PREFIX"
+  if [[ $STATE != ready ]]; then
+    n=$((n + 1)); say "  $n. Run: chown -R $OWNER:admin $PREFIX ; chmod -R g-w,o-w $PREFIX"
+  fi
+  if [[ -n $MISSING_WRAPPER ]]; then
+    n=$((n + 1)); say "  $n. Put the brew wrapper in $SHARE_DIR and add it to ~/.zshrc of: $MISSING_WRAPPER"
+  fi
+  if [[ -n $APPDIR_USERS ]]; then
+    n=$((n + 1)); say "  $n. Turn off the HOMEBREW_CASK_OPTS --appdir line (put '#' in front) for: $APPDIR_USERS"
+  fi
+  if [[ -n $APPDIR_CASKS ]]; then
+    n=$((n + 1)); say "  $n. Move these apps out of ~/Applications, then reinstall them with brew into /Applications:"
+    while IFS=$'\t' read -r u cask app; do
+      [[ -n $app ]] && say "       $cask  ($u: $app)"
+    done <<<"$APPDIR_CASKS"
+    say "     The old apps are kept in the backup folder. Apps that brew did not install stay where they are."
+  fi
+  n=$((n + 1)); say "  $n. Check the result."
+  say "Every change is saved in $BACKUP_ROOT."
+  say "Undo everything: sudo $0 --rollback"
   say ""
 }
 
 apply() {
-  local uid
+  local uid u
+  start_backup
   if [[ $CREATE_OWNER -eq 1 ]]; then
     uid=$(next_free_uid)
     # sysadminctl needs the password as an argument. Other admins could see it
@@ -272,27 +448,75 @@ apply() {
     say "Creating the hidden account '$OWNER'..."
     out=$(sysadminctl -addUser "$OWNER" -fullName "Homebrew Owner" -UID "$uid" -admin -password "$PW" 2>&1) \
       || { printf '%s\n' "$out" >&2; die "Could not create '$OWNER'. Nothing else was changed."; }
+    record account_created "$OWNER"
     dscl . create "/Users/$OWNER" IsHidden 1 || die "Could not hide '$OWNER'."
     dscl . create "/Users/$OWNER" UserShell /usr/bin/false || die "Could not set the shell."
     dscl . -authonly "$OWNER" "$PW" >/dev/null 2>&1 || warn "The new account did not pass a test login."
     unset PW
     say "Created the hidden account '$OWNER'."
   fi
-  chown -R "$OWNER:admin" "$PREFIX" || die "chown failed. Run the script again."
-  chmod -R g-w,o-w "$PREFIX" || die "chmod failed. Run the script again."
-  say "Changed the owner of $PREFIX to '$OWNER'."
+  if [[ $STATE != ready ]]; then
+    record owner_before "$OWNER_NOW" "$GROUP_NOW"
+    chown -R "$OWNER:admin" "$PREFIX" || die "chown failed. Run the script again."
+    chmod -R g-w,o-w "$PREFIX" || die "chmod failed. Run the script again."
+    say "Changed the owner of $PREFIX to '$OWNER'."
+  fi
   install_wrapper
+  disable_appdir_lines
+  [[ -n $APPDIR_CASKS ]] && migrate_apps
+  return 0
+}
+
+install_wrapper_files() {
+  install -d -m 755 "$SHARE_DIR"
+  install -m 644 "$WRAPPER_SRC" "$SHARE_DIR/brew-wrapper.zsh"
 }
 
 install_wrapper() {
-  install -d -m 755 "$SHARE_DIR"
-  install -m 644 "$WRAPPER_SRC" "$SHARE_DIR/brew-wrapper.zsh"
-  if ! grep -qsF "$WRAPPER_LINE" "$REAL_HOME/.zshrc"; then
-    if ask "Add the brew wrapper to $REAL_HOME/.zshrc?"; then
-      sudo -u "$REAL_USER" sh -c "echo '$WRAPPER_LINE' >> '$REAL_HOME/.zshrc'"
-      say "Added the wrapper to ~/.zshrc."
+  local u zr
+  install_wrapper_files
+  for u in $MISSING_WRAPPER; do
+    zr=$(user_home "$u")/.zshrc
+    if [[ -e $zr ]]; then backup_file "$zr"; else : >"$zr"; chown "$u" "$zr"; fi
+    # Start on a new line if the file does not end with one.
+    [[ -s $zr && -n $(tail -c1 "$zr") ]] && printf '\n' >>"$zr"
+    printf '%s\n' "$WRAPPER_LINE" >>"$zr"
+    record wrapper_added "$zr"
+    say "Added the wrapper to $zr"
+  done
+}
+
+disable_appdir_lines() {
+  local u home f
+  for u in $APPDIR_USERS; do
+    home=$(user_home "$u")
+    for f in $(appdir_setting "$home" | cut -d: -f1 | sort -u); do
+      backup_file "$home/$f"
+      edit_file "$home/$f" "s|^([[:space:]]*(export[[:space:]]+)?HOMEBREW_CASK_OPTS=.*appdir.*)\$|${DISABLED_MARK}\\1|"
+      record appdir_disabled "$home/$f"
+      say "Turned off HOMEBREW_CASK_OPTS in $home/$f"
+    done
+  done
+}
+
+# Move each brew app out of ~/Applications, then let brew install it again. The
+# owner account installs into /Applications, where it can update and remove the app.
+# --appdir is needed: brew remembers the folder of the first install and would reuse it.
+migrate_apps() {
+  local u cask app saved
+  while IFS=$'\t' read -r u cask app; do
+    [[ -n $app ]] || continue
+    saved=$BACKUP/apps/$u/$cask
+    install -d -m 700 "$saved"
+    mv "$app" "$saved/" || { warn "Could not move $app. Skipped."; continue; }
+    say "Reinstalling '$cask' into /Applications..."
+    if (cd / && "$BREW" as-brew-user reinstall --cask --appdir=/Applications "$cask" </dev/null); then
+      record app_moved "$u" "$cask" "$app"
+    else
+      warn "Reinstall of '$cask' failed. Putting the old app back."
+      mv "$saved/$(basename "$app")" "$app"
     fi
-  fi
+  done <<<"$APPDIR_CASKS"
 }
 
 final_check() {
@@ -314,10 +538,17 @@ final_check() {
   else
     say "NOTE  the wrapper is not in $REAL_HOME/.zshrc, so plain brew commands will fail."
   fi
+  if [[ -z $APPDIR_CASKS && -z $APPDIR_USERS ]]; then say "PASS  no --appdir setting and no brew app in a ~/Applications folder"
+  else say "FAIL  an --appdir setting or a brew app is still in a ~/Applications folder"; fail=1; fi
   return $fail
 }
 
 # ---------- run ----------
+if [[ $ROLLBACK -eq 1 ]]; then
+  do_rollback
+  exit 0
+fi
+
 : >"$REPORT"
 chown "$REAL_USER" "$REPORT"; chmod 600 "$REPORT"
 
@@ -335,10 +566,10 @@ if [[ $CHECK_ONLY -eq 1 || $STATE == none ]]; then
   exit 0
 fi
 
-if [[ $STATE == ready ]]; then
+if [[ $STATE == ready && -z $APPDIR_CASKS && -z $APPDIR_USERS && -z $MISSING_WRAPPER ]]; then
   say "Nothing to fix."
   OWNER=$OWNER_NOW
-  install_wrapper
+  install_wrapper_files
   final_check
   say "Report: $REPORT"
   exit 0
@@ -347,6 +578,12 @@ fi
 [[ $ARCH == arm64 ]] || die "Apple silicon only."
 if [[ $BREW_RUNNING -eq 1 ]]; then die "Close all brew commands, then run this script again."; fi
 if [[ $CLAUDE_RUNNING -eq 1 ]]; then ask "A Claude Code session is open. Continue anyway?" || die "Close Claude Code, then run this script again."; fi
+# An app that is open must not be moved.
+RUNNING_APPS=""
+while IFS=$'\t' read -r _ _ app; do
+  [[ -n $app ]] && pgrep -fq "$app/Contents/MacOS/" && RUNNING_APPS="${RUNNING_APPS}${RUNNING_APPS:+, }$(basename "$app")"
+done <<<"$APPDIR_CASKS"
+[[ -z $RUNNING_APPS ]] || die "Quit these apps first, then run this script again: $RUNNING_APPS"
 
 choose_owner
 print_plan
@@ -367,9 +604,14 @@ say "     Only a new window loads the wrapper. (Or run: source ~/.zshrc)"
 say "  2. Test it (this asks for YOUR password): brew update"
 say "     If brew says 'not writable' and shows 'sudo chown', do not run that command."
 say "     It means this window does not have the wrapper yet. Open a new window."
-say "  3. For each other person: log in as that person and run:"
-say "       echo '$WRAPPER_LINE' >> ~/.zshrc"
+say "  3. Tell the other people to open a new Terminal window too."
+say "     The script already added the wrapper to their ~/.zshrc."
+if [[ -s $BACKUP/manifest ]] && grep -q '^app_moved' "$BACKUP/manifest"; then
+  say "  4. Old copies of the moved apps are in $BACKUP/apps."
+  say "     Delete that folder when the new apps work."
+fi
 say ""
+say "Undo all of it: sudo $0 --rollback"
 say "Report for your AI agent: $REPORT"
 say "The report lists the account names on this Mac. Read it before you share it."
 exit $rc

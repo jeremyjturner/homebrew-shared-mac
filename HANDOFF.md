@@ -35,6 +35,14 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protec
 - `asciinema` and `agg` are installed on the host (user-approved 2026-11-25); `vhs`/`ttyd` from before are no longer used.
 - ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
 
+## Appdir migration and rollback (2026-11-25, after the first real-Mac look)
+
+- `scripts/setup.sh` now also: adds the wrapper to every account that uses brew (no manual per-user step), comments out `HOMEBREW_CASK_OPTS=...--appdir...` lines (marker: `# homebrew-shared-mac disabled:` and a space), and moves brew-managed apps from a user's `~/Applications` to `/Applications` with `brew as-brew-user reinstall --cask --appdir=/Applications NAME`. Without the explicit `--appdir`, brew reuses the folder saved at first install (Tart caught this).
+- Every change goes into `/usr/local/share/homebrew-shared-mac/backups/TIMESTAMP/manifest` (apps in `apps/`, file copies in `files/`). `sudo ./scripts/setup.sh --rollback [--backup DIR]` reverses it from last to first. Rollback leaves moved apps unmanaged by brew.
+- Apps are found through the Caskroom symlinks that point into `~/Applications`. A running app stops the script before any change.
+- Full `tests/tart-test.sh` passed (run 5): new checks for the report, migration, wrapper lines, script rollback, then re-setup and the manual rollback.
+- Still open: clips 04 (no wrapper question any more) and 06 (wrapper is already added) are out of date and need re-recording; `docs/test-results.md` needs a round for this; not committed yet; the real-Mac run (user: jeremyjturner owns the prefix, godzillanintenbro has Firefox, OBS, Steam in `~/Applications`) has not happened.
+
 ## Rules from the user
 
 - Use Tart for testing before making any change on this machine.

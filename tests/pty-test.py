@@ -78,13 +78,13 @@ chk = Term("dscl . -read /Users/homebrew UniqueID 2>&1; true")
 chk.expect(r"(does not exist|DS Error)")
 ok("answer n changes nothing (no homebrew account)")
 
-# 3. Enter at the name prompt gives 'homebrew'; y at both questions finishes.
+# 3. Enter at the name prompt gives 'homebrew'; y at the plan finishes (the wrapper is in the plan).
 t = Term("cd /tmp && sudo -k && sudo -p 'Password:' ./setup.sh --report /tmp/report-y.txt")
 t.expect(r"Password:"); t.line(PW)
 t.expect(r"Name for the hidden Homebrew account"); t.line("")
 t.expect(r"Make these changes now\?"); t.line("y")
-t.expect(r"Add the brew wrapper"); t.line("y")
-assert t.finish() == 0
+rc = t.finish()
+assert rc == 0, f"setup.sh exit code {rc}; output:\n{ANSI.sub('', t.buf)[-3000:]}"
 ok("interactive run with defaults creates the account")
 
 # Put the passwordless sudo of the base image back, for the rest of tests/tart-test.sh.

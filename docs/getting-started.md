@@ -159,9 +159,21 @@ Its name is `shared-brew-report-<date>.txt`.
    Press Return to use `homebrew`, or type your own name.
 4. Read the plan.
    Type `y` and press Return to continue.
-5. The script asks if it can add the wrapper to your `~/.zshrc` file.
-   Type `y` and press Return.
-6. Wait for the lines that start with `PASS`.
+5. Wait for the lines that start with `PASS`.
+
+The script also does these steps for you, and the plan lists them:
+
+- It adds the wrapper to the `~/.zshrc` file of each account that uses Homebrew.
+- It turns off a `HOMEBREW_CASK_OPTS="--appdir=..."` line.
+  Homebrew now ignores that line, because the hidden account installs apps.
+- It moves the apps that Homebrew put in a `~/Applications` folder.
+  Homebrew installs them again in `/Applications`.
+  The old copies stay in the backup folder.
+  The script stops and tells you if one of these apps is open.
+  Quit the app and run the script again.
+
+The script saves every change in `/usr/local/share/homebrew-shared-mac/backups`.
+To undo all of it, go to [Rollback](#rollback).
 
 The script sets a random password for the hidden account.
 Nobody sees it and nobody can log in with it.
@@ -224,19 +236,27 @@ Homebrew asks for your password first.
 
 [Watch this clip with pause and copy](https://asciinema.org/a/zk3HDtHI7GUKHcPZ)
 
-## Part 6: Do the same for the second user
+## Part 6: Check the second user
 
+The script already added the wrapper to the second user's `~/.zshrc`.
 Do these steps as the second user.
 
 1. Switch to the second user.
    In Terminal, type `su - <account-name>` and press Return.
    Type the password of that account.
    Or use the Fast User Switching menu and open Terminal.
-2. Add the wrapper to this user's `~/.zshrc`:
+2. Open a new Terminal window and check that the wrapper is loaded:
+
+   ```sh
+   type brew
+   ```
+
+   You see `brew is a shell function`.
+   If you do not, this user did not use Homebrew before.
+   Add the wrapper, then open a new Terminal window:
 
    ```sh
    echo 'source /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh' >> ~/.zshrc
-   source ~/.zshrc
    ```
 
 3. Show the installed packages:
@@ -296,7 +316,30 @@ This is the safety limit of this design.
 
 ## Rollback
 
-Use these steps to go back to the old state.
+### Rollback with the script
+
+The script saves a backup of every change.
+This command undoes the last run:
+
+```sh
+sudo ./scripts/setup.sh --rollback
+```
+
+It does these things, from the last change to the first:
+
+- It puts the moved apps back in `~/Applications`.
+- It turns the `HOMEBREW_CASK_OPTS` line back on.
+- It removes the wrapper lines it added.
+- It gives `/opt/homebrew` back to the account that owned it.
+- It deletes the hidden account, if the script made it.
+
+Homebrew does not manage the apps that go back to `~/Applications`.
+Install them again with `brew install --cask --appdir=~/Applications NAME`
+if you want Homebrew to manage them.
+
+### Rollback by hand
+
+Use these steps if the script does not run.
 
 1. Give the prefix back to your account:
 
