@@ -65,7 +65,7 @@ Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tr
 **Remaining (2026-11-25, after rollback tests and the no-matrix decision). Everything else below is done.**
 
 1. User task, later: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
-2. `.cast` player: the user created an asciinema.org account (2026-11-25). Next: the user runs `asciinema auth` (interactive, links the account), then approves which casks to upload. Check every cast for personal data first (rule in `CLAUDE.md`), then link the pages from the guide.
+2. Done (2026-11-25): all seven casts uploaded to asciinema.org as unlisted (private-pattern scan: 0 hits). Each GIF in `docs/getting-started.md` has a "Watch this clip with pause and copy" link. After you re-record a clip, upload it again (`asciinema upload --visibility unlisted docs/casts/NAME.cast`) and update its link. Old uploads stay online until the user deletes them on asciinema.org.
 3. Check once that the drift workflow works: `gh workflow run drift-check.yml`, then `gh run list --workflow drift-check.yml --limit 1` and `gh issue list --label upstream-drift`. Refresh snapshots with `scripts/drift-check.sh --update` after review when upstream changes.
 4. Dropped by the user (2026-11-25): GUI screenshots, a `.pkg` cask test, a scheduled macOS-runner re-test, changing the demo passwords.
 5. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).

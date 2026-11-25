@@ -64,6 +64,8 @@ When a command asks for a password, no characters show on the screen. This is no
 
 ![brew --version shows the version. ls -ld shows who owns /opt/homebrew.](images/01-start-state.gif)
 
+[Watch this clip with pause and copy](https://asciinema.org/a/cuTxKvYQrP1mUc4J)
+
 ## Part 2: Get the files
 
 1. Close all `brew` commands that are running.
@@ -98,6 +100,8 @@ When a command asks for a password, no characters show on the screen. This is no
 
    ![Steps 2 to 5: check Git, go to the home folder, download the files, go into the new folder.](images/02-get-files.gif)
 
+   [Watch this clip with pause and copy](https://asciinema.org/a/qp9CmFCo9DBxyHxI)
+
 ## Part 3: Check Homebrew
 
 The setup script is the only script that you need.
@@ -115,6 +119,8 @@ In this mode, it only reads. It changes nothing.
 4. Read the result.
 
 ![The check shows what the script found and does not change anything.](images/03-check.gif)
+
+[Watch this clip with pause and copy](https://asciinema.org/a/7yCWcC8XCpU8ACBk)
 
 The script looks at these things:
 
@@ -165,6 +171,8 @@ If you ever need a new password for the account, an administrator can set one:
 
 ![The script creates the hidden account, changes the owner, and checks the result.](images/04-setup.gif)
 
+[Watch this clip with pause and copy](https://asciinema.org/a/KZPjfhk9FZ7zwfBD)
+
 If you see `FAIL`, stop.
 Go to [Rollback](#rollback).
 
@@ -214,6 +222,8 @@ Homebrew asks for your password first.
 
 ![Install and run the hello package.](images/05-wrapper.gif)
 
+[Watch this clip with pause and copy](https://asciinema.org/a/zk3HDtHI7GUKHcPZ)
+
 ## Part 6: Do the same for the second user
 
 Do these steps as the second user.
@@ -247,6 +257,8 @@ Do these steps as the second user.
 
 ![The second user sees the same packages and installs a new one.](images/06-second-user.gif)
 
+[Watch this clip with pause and copy](https://asciinema.org/a/EvoxKJIRGuCRPTkt)
+
 > **Note:** Only these commands run without a password:
 > `--prefix`, `--cellar`, `--repository`, `--version`, `list`, `ls`, and `home`.
 > All other `brew` commands ask for your password.
@@ -270,6 +282,8 @@ This is the safety limit of this design.
    ```
 
 ![Three wrong passwords stop the install.](images/07-wrong-password.gif)
+
+[Watch this clip with pause and copy](https://asciinema.org/a/dTf6BluHA2MX9g2T)
 
 ## Rules for daily use
 
