@@ -64,12 +64,11 @@ Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tr
 
 **Remaining (2026-11-25, after rollback tests and the no-matrix decision). Everything else below is done.**
 
-1. User task: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
-2. User task: choose a player for the `.cast` files (asciinema.org needs the user's approval, or self-host).
-3. Check once that `gh workflow run drift-check.yml` runs and opens or updates the `upstream-drift` issue as expected. Then refresh snapshots with `scripts/drift-check.sh --update` after review when upstream changes.
-4. Optional tests: a `.pkg` cask that runs an installer as the owner; a scheduled re-test on the newest Homebrew (needs a macOS runner).
-5. Optional: GUI screenshots (needs Screen Recording permission). The demo passwords `bobpw` and `demo-password` are typed on screen in the clips; changing them means re-recording.
-6. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).
+1. User task, later: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
+2. `.cast` player: the user created an asciinema.org account (2026-11-25). Next: the user runs `asciinema auth` (interactive, links the account), then approves which casks to upload. Check every cast for personal data first (rule in `CLAUDE.md`), then link the pages from the guide.
+3. Check once that the drift workflow works: `gh workflow run drift-check.yml`, then `gh run list --workflow drift-check.yml --limit 1` and `gh issue list --label upstream-drift`. Refresh snapshots with `scripts/drift-check.sh --update` after review when upstream changes.
+4. Dropped by the user (2026-11-25): GUI screenshots, a `.pkg` cask test, a scheduled macOS-runner re-test, changing the demo passwords.
+5. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).
 
 Details of finished work:
 
