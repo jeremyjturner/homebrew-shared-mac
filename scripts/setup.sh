@@ -506,21 +506,35 @@ print_plan() {
   say ""
 }
 
+# Run a command that asks for a password on its terminal, and type $PW there.
+# The password goes in the environment of expect, not in any arguments.
+run_with_pw() {
+  # shellcheck disable=SC2016  # the single quotes are for expect (Tcl), not for the shell
+  PW=$PW /usr/bin/expect -c 'set timeout 60
+spawn {*}$argv
+expect -re {(?i)password: ?}
+send -- "$env(PW)\r"
+expect eof
+catch wait r
+exit [lindex $r 3]' -- "$@"
+}
+
 apply() {
   local uid u
   start_backup
   if [[ $CREATE_OWNER -eq 1 ]]; then
     uid=$(next_free_uid)
-    # sysadminctl needs the password as an argument. Other admins could see it
-    # in the process list for a moment. They can already become root.
+    # Never put the password in the arguments of a command: any local account can read
+    # them in the process list. sysadminctl and dscl ask for it on the terminal when the
+    # argument is "-" or missing. run_with_pw types it there.
     local out
     say "Creating the hidden account '$OWNER'..."
-    out=$(sysadminctl -addUser "$OWNER" -fullName "Homebrew Owner" -UID "$uid" -admin -password "$PW" 2>&1) \
+    out=$(run_with_pw sysadminctl -addUser "$OWNER" -fullName "Homebrew Owner" -UID "$uid" -admin -password - 2>&1) \
       || { printf '%s\n' "$out" >&2; die "Could not create '$OWNER'. Nothing else was changed."; }
     record account_created "$OWNER"
     dscl . create "/Users/$OWNER" IsHidden 1 || die "Could not hide '$OWNER'."
     dscl . create "/Users/$OWNER" UserShell /usr/bin/false || die "Could not set the shell."
-    dscl . -authonly "$OWNER" "$PW" >/dev/null 2>&1 || warn "The new account did not pass a test login."
+    run_with_pw dscl . -authonly "$OWNER" >/dev/null 2>&1 || warn "The new account did not pass a test login."
     unset PW
     say "Created the hidden account '$OWNER'."
   fi
