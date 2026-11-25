@@ -509,14 +509,17 @@ print_plan() {
 # Run a command that asks for a password on its terminal, and type $PW there.
 # The password goes in the environment of expect, not in any arguments.
 run_with_pw() {
-  # shellcheck disable=SC2016  # the single quotes are for expect (Tcl), not for the shell
-  PW=$PW /usr/bin/expect -c 'set timeout 60
+  # The expect script comes in on file descriptor 3. The command and its arguments follow
+  # the script name, and expect puts them in $argv.
+  PW=$PW /usr/bin/expect /dev/fd/3 "$@" 3<<'EOF'
+set timeout 60
 spawn {*}$argv
 expect -re {(?i)password: ?}
 send -- "$env(PW)\r"
 expect eof
 catch wait r
-exit [lindex $r 3]' -- "$@"
+exit [lindex $r 3]
+EOF
 }
 
 apply() {
