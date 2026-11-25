@@ -45,3 +45,15 @@ NEWPW=$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | cut -c1-20)
 check "documented dscl password reset works" "sudo dscl . -passwd /Users/homebrew '$NEWPW' && dscl . -authonly homebrew '$NEWPW'"
 x 'sudo rm /etc/sudoers.d/zz-test'
 if [ -z "$(x 'find /opt/homebrew ! -user homebrew | head -1')" ]; then echo "PASS ownership"; else echo "FAIL ownership"; exit 1; fi
+# Rollback: the steps of the "Rollback" section in docs/getting-started.md, in order.
+# shellcheck disable=SC2016  # $(whoami) must expand in the VM, not here
+x 'sudo chown -R "$(whoami)" /opt/homebrew'
+x "sed -i '' '/brew-wrapper.zsh/d' ~/.zshrc"
+x 'sudo sysadminctl -deleteUser homebrew 2>/dev/null'
+x 'sudo rm -r /usr/local/share/homebrew-shared-mac'
+check "rollback: hidden account is gone" '! dscl . -read /Users/homebrew >/dev/null 2>&1'
+check "rollback: the home folder is gone" '! test -e /Users/homebrew'
+# shellcheck disable=SC2016  # $(whoami) must expand in the VM, not here
+check "rollback: the admin owns the prefix" 'test -z "$(find /opt/homebrew ! -user "$(whoami)" | head -1)"'
+check "rollback: no wrapper line or files are left" '! grep -q brew-wrapper ~/.zshrc && ! test -e /usr/local/share/homebrew-shared-mac'
+check "rollback: brew install and uninstall work for the admin without sudo" 'zsh -ilc "brew install hello && brew uninstall hello"'
