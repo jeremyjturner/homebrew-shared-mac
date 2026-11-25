@@ -60,6 +60,9 @@ check "control: plain brew doctor shows the chown advice" 'sudo -u bob -H /bin/z
 if x 'sudo -u bob -H /bin/zsh -ilc "export PATH=/opt/homebrew/bin:\$PATH; brew doctor 2>&1" || true' | grep -q "should change the ownership"; then echo "FAIL wrapper brew doctor shows the chown advice"; exit 1; else echo "PASS wrapper brew doctor has no chown advice"; fi
 # shellcheck disable=SC2016  # \$PATH must expand in the VM, not here
 x 'sudo -u bob -H /bin/zsh -c "source /tmp/brew-wrapper.zsh; export PATH=/opt/homebrew/bin:\$PATH; brew install hello && brew uninstall hello"'
+# Regression: a folder the owner cannot enter (like a repo in the home folder) must not break brew.
+# shellcheck disable=SC2016  # \$PATH must expand in the VM, not here
+if x 'sudo -u bob -H /bin/zsh -c "mkdir -p -m 700 ~/private && cd ~/private && source /tmp/brew-wrapper.zsh && export PATH=/opt/homebrew/bin:\$PATH && brew update"'; then echo 'PASS wrapper works from a private folder'; else echo 'FAIL wrapper from a private folder'; exit 1; fi
 # HOMEBREW_CASK_OPTS --appdir: the report must flag it, and a cask installed through the wrapper
 # must land in /Applications, not in bob's ~/Applications.
 # shellcheck disable=SC2016  # \$PATH must expand in the VM, not here

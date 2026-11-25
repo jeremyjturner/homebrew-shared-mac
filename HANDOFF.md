@@ -111,3 +111,8 @@ Details of finished work:
 - Changes after that run (committed and pushed as `3cdca42`; CI passed): `setup.sh` sets `HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1` and `HOMEBREW_NO_ENV_HINTS=1`, and the "cask app(s)" wording is fixed. `tests/tart-test.sh` has a new check for the warning (full run: 44 PASS, 0 FAIL; `hb-test` deleted).
 - Open: the user still has the old-app backup in `/usr/local/share/homebrew-shared-mac/backups/` (delete when happy). A failed reinstall should leave a clear message about the cask's brew state. The "administer your computer" window cannot be tested in Tart.
 - Dock note (2026-11-25): the user saw a question-mark icon in the Dock for a moved app (Firefox). `setup.sh` "Next" step 4 and `docs/getting-started.md` (after the move list, and in Rollback) now tell the user to drag the icon out and add the app again from its new place. Tart run: 44 PASS. Clip 04 does not move apps, so it is unaffected. Not automated: the Dock cannot be tested in Tart.
+
+## Wrapper working-folder fix (2026-11-25)
+
+- Real-Mac bug: `brew update` through the wrapper failed from a folder the owner account cannot enter ("The current working directory must exist to run brew"). Fix: the wrapper runs owner-run commands from `/tmp`. Regression check added to `tests/tart-test.sh`; see round 11 in `docs/test-results.md`.
+- Installed copies of the wrapper are not updated by git. Re-run `setup.sh`, or copy `scripts/brew-wrapper.zsh` to `/usr/local/share/homebrew-shared-mac/`. Not yet done on the maintainer's Mac (needs sudo). Existing users of the repo need the same step.

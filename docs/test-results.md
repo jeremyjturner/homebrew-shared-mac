@@ -64,7 +64,7 @@ PASS
 
 FINDINGS
 
-- A first manual test (private repo, files typed in by hand) ended with brew's "not writable ... `sudo chown -R admin /opt/homebrew`" advice. That text comes only from `brew doctor` and the pre-install check (`diagnostic.rb`, `check_access_directories`). It appears when a plain `brew` command runs as a non-owner, for example in a Terminal window opened before the wrapper was added. `brew list` and `brew --version` do not print it. The guide and `setup.sh` now tell the reader to open a new window and not to run that command.
+- A first manual test (private repo, files typed in by hand) ended with brew's "not writable ... `sudo chown -R admin /opt/homebrew`" advice. That text comes from `brew doctor` and the pre-install check (`diagnostic.rb`, `check_access_directories`), and also from `brew update` (`cmd/update.sh`, which checks `Cellar` and the repository and names that folder). It appears when a plain `brew` command runs as a non-owner, for example in a Terminal window opened before the wrapper was added. `brew list` and `brew --version` do not print it. The guide and `setup.sh` now tell the reader to open a new window and not to run that command.
 - Plain `brew doctor` as a non-owner prints the advice. The test uses this as a negative control.
 - Brew 7.0.12 prints a "taps are not trusted" warning for taps in the base image. A normal Mac may not see it. Not covered in the guide.
 
@@ -166,3 +166,16 @@ Tart check after the fix: `tests/tart-test.sh`, 44 checks passed, 0 failed. A ne
 NOT TESTED
 
 - Steam's launch services under the user's GUI session in Tart. The real-Mac run covers this: Steam started.
+
+## Round 11 (real-Mac report: wrapper from a private folder)
+
+Found
+
+- On a real Mac, `brew update` through the wrapper failed from a folder inside the user's home: "The current working directory must exist to run brew". The owner account cannot enter the user's home folder. All earlier tests ran from `/tmp`, so they missed it.
+
+Fixed
+
+- `brew-wrapper.zsh` runs the owner-run commands from `/tmp`.
+- New check in `tests/tart-test.sh`: `brew update` through the wrapper from a mode-700 folder.
+
+Tart check: the full `tests/tart-test.sh` passed with the new check, before a last lint-only change (`if/else` instead of `&& ||`). That change was checked with `bash -n` and shellcheck only. The check was not run against the old wrapper to see it fail.
