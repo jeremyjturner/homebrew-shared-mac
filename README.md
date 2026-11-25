@@ -150,7 +150,7 @@ To delete the account: `sudo sysadminctl -deleteUser homebrew`
 | 26.6.2 (Apple silicon, Tart VM) | 7.0.12 | Passed |
 | 26.6.2 (Apple silicon, Tart VM) | 7.0.16 | Passed (earlier rounds) |
 
-Other macOS versions are not tested yet.
+Tests run on the newest macOS that Tart offers. Older macOS versions are not tested.
 
 ### Testing
 

@@ -130,4 +130,4 @@ PASS
 
 NOT TESTED
 
-- macOS versions other than 26.6.2 (no other Tart image was pulled).
+- Older macOS versions. Decision (2026-11-25): tests run only on the newest macOS that Tart offers.
