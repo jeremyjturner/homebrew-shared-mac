@@ -60,7 +60,18 @@ Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirrusl
 
 ## Next steps (in order, saved 2026-11-25, end of day)
 
-Last commit: `fbb23b7` (signed, pushed, CI green). Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
+Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
+
+**Remaining (2026-11-25, after rollback tests and the no-matrix decision). Everything else below is done.**
+
+1. User task: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
+2. User task: choose a player for the `.cast` files (asciinema.org needs the user's approval, or self-host).
+3. Check once that `gh workflow run drift-check.yml` runs and opens or updates the `upstream-drift` issue as expected. Then refresh snapshots with `scripts/drift-check.sh --update` after review when upstream changes.
+4. Optional tests: a `.pkg` cask that runs an installer as the owner; a scheduled re-test on the newest Homebrew (needs a macOS runner).
+5. Optional: GUI screenshots (needs Screen Recording permission). The demo passwords `bobpw` and `demo-password` are typed on screen in the clips; changing them means re-recording.
+6. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).
+
+Details of finished work:
 
 1. Done: `docs/new-mac.md` (install Homebrew, add the second account, then Part 2 of the getting-started guide). Round 7 in `docs/test-results.md`. A reader who follows it on a real Mac is the missing test (installer prompts, Command Line Tools).
    Also done: the hidden owner now gets a random password (round 6); no password prompt, `--password-stdin` removed. Only clip 04 changed. The other clips never showed that prompt.
