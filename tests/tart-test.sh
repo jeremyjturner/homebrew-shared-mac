@@ -7,6 +7,8 @@ tart delete "$VM" 2>/dev/null || true
 tart clone "$BASE" "$VM"
 tart run --no-graphics "$VM" >/dev/null 2>&1 &
 trap 'tart stop "$VM" || true' EXIT
+# tart run starts in the background; wait until the VM is listed as running.
+until tart list | grep -q "$VM.*running"; do sleep 2; done
 tart ip "$VM" --wait 120 >/dev/null
 # Random password for this run only. Nothing secret is stored in the repo.
 BOBPW=$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | cut -c1-20)
@@ -18,6 +20,10 @@ put "$HERE/scripts/brew-wrapper.zsh" /tmp/brew-wrapper.zsh
 put "$HERE/scripts/setup.sh" /tmp/setup.sh
 x 'chmod +x /tmp/setup.sh'
 x "sudo sysadminctl -addUser bob -fullName Bob -UID 502 -admin -password '$BOBPW' 2>/dev/null"
+# Interactive prompts through a pty. The base image has passwordless sudo, so switch it off for these.
+# pty-test.py puts it back at the end (with the admin password; tart exec has no tty).
+x 'sudo mv /etc/sudoers.d/admin-nopasswd /tmp/admin-nopasswd.bak'
+python3 "$HERE/tests/pty-test.py" "$VM" admin
 # The real setup script, non-interactive: creates the hidden account and changes the owner.
 x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report.txt"
 x 'test -s /tmp/report.txt'
