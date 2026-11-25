@@ -69,6 +69,14 @@ You want to avoid the problem from the start.
 2. It installs Homebrew and adds the second account.
 3. It then sends you to the [getting started guide](docs/getting-started.md), Part 2.
 
+### Path C: let your AI assistant do it
+
+You use an AI assistant that can run commands on your Mac.
+
+1. Open the [AI assistant guide](docs/llm-prompt.md).
+2. Copy the prompt and paste it into your assistant.
+3. Read the plan. Say yes only if you agree. Type your own password when `sudo` asks.
+
 ## Quick look
 
 ```sh
@@ -131,7 +139,7 @@ The script creates one account to own `/opt/homebrew`. It is the dedicated owner
 - `brew services` does not work. The hidden account has no GUI session, and root services need `sudo brew`.
 - Casks install owned by the hidden account.
 - Upgrade the `claude-code` cask only with no Claude Code session open.
-- If `brew` shows "not writable" and a `sudo chown` command, the window does not have the wrapper. Do not run the command. Open a new Terminal window.
+- If `brew` shows "not writable" and a `sudo chown` command (for example `/opt/homebrew/Cellar is not writable` after `brew update`), the window does not have the wrapper. Do not run the command. Open a new Terminal window.
 
 ### Rollback
 

@@ -5,6 +5,7 @@ It starts from a Mac where Homebrew is already installed.
 Homebrew is not installed yet? Read the [new Mac guide](new-mac.md) first.
 Follow the steps in order.
 Do not skip a step.
+Prefer that an AI assistant does it for you? Use the [AI assistant guide](llm-prompt.md) instead.
 
 > **Warning:** This guide changes the owner of the Homebrew folder.
 > Read each step before you do it.
@@ -239,7 +240,8 @@ Homebrew asks for your password first.
 
    You see `Hello, world!`.
 
-> **Warning:** Sometimes `brew` says that directories are "not writable".
+> **Warning:** Sometimes `brew` says that a directory is "not writable".
+> For example: `/opt/homebrew/Cellar is not writable`.
 > It then shows a `sudo chown` command.
 > Do not run that command. It undoes the fix.
 > It means that the window does not have the wrapper.

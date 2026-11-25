@@ -121,3 +121,11 @@ Details of finished work:
 ## Real-Mac report: cask upgrade password prompt (2026-11-25, later)
 
 `brew upgrade --cask` failed for apps in `/Applications` that a person owns (the owner account cannot write; brew asks for its unknown sudo password). `setup.sh` now finds those apps and gives them to the owner (`find_foreign_apps`, `fix_foreign_apps`, rollback kind `app_chowned`). Tart run passed (round 12 in `docs/test-results.md`). Committed. On the real Mac this did not cover `bambu-studio` and `chatgpt`: the Caskroom held a real copy of the app instead of a symlink (adopted cask), so `brew upgrade` stopped with "already an App at". `find_foreign_apps` now also finds those; `fix_foreign_apps` replaces the copy with a symlink (rollback kind `caskroom_link`). Tart run passed (82 PASS). The user must run `sudo ./scripts/setup.sh` again on the real Mac, then `brew upgrade --cask`. Tart runs take 10+ minutes; the cask-uninstall Automation pause can add about 4 minutes, so use a watch loop of 150 x 5 s. Also seen on the real Mac: the first `sudo` password was mistyped once (not a bug), and brew 7 warns that tap `openai/tools` is not trusted (Tart's own tap; the user's choice).
+
+## Real-Mac run and AI prompt (2026-11-25)
+
+- First real-Mac run of the app-ownership fix passed: bambu-studio and chatgpt upgraded with no errors.
+- Each brew command in a chain asks for the user's password once. Homebrew 7 runs `sudo --reset-timestamp` on every user switch (`utils/sudo.sh`). This is by design. The user accepted it. No sudoers rule is added.
+- The last `sudo: a password is required` in the second chain is unexplained (probably brew running sudo as the hidden owner). Not tested.
+- A "find devices on local networks" prompt for `<unknown>` showed at logout. Not traced; probably an app whose owner changed (Bambu Studio or Elgato). `Don't Allow` is safe.
+- New: `docs/llm-prompt.md` (Path C: a prompt for the user's own AI assistant), linked from README and getting-started. Not tested with a real assistant.
