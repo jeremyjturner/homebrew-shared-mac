@@ -108,5 +108,5 @@ Details of finished work:
 ## Second real-Mac run (2026-11-25)
 
 - The user ran `--check` and the full `setup.sh` on the real Mac: Steam moved with no password prompt, all PASS lines, and Steam starts in the second account. Recorded as round 10 in `docs/test-results.md`.
-- Changes after that run (not committed yet at the time of writing): `setup.sh` sets `HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1` and `HOMEBREW_NO_ENV_HINTS=1`, and the "cask app(s)" wording is fixed. `tests/tart-test.sh` has a new check for the warning (full run: 44 PASS, 0 FAIL; `hb-test` deleted).
-- Open: the user still has the old-app backup in `/usr/local/share/homebrew-shared-mac/backups/` (delete when happy). A failed reinstall should leave a clear message about the cask's brew state. CI for the next push is not checked. The "administer your computer" window cannot be tested in Tart.
+- Changes after that run (committed and pushed as `3cdca42`; CI passed): `setup.sh` sets `HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1` and `HOMEBREW_NO_ENV_HINTS=1`, and the "cask app(s)" wording is fixed. `tests/tart-test.sh` has a new check for the warning (full run: 44 PASS, 0 FAIL; `hb-test` deleted).
+- Open: the user still has the old-app backup in `/usr/local/share/homebrew-shared-mac/backups/` (delete when happy). A failed reinstall should leave a clear message about the cask's brew state. The "administer your computer" window cannot be tested in Tart.
