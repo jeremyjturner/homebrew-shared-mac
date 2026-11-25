@@ -28,6 +28,12 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 - Regression test: `tests/tart-test.sh` (uses `setup.sh --yes --password-stdin --owner NAME`).
 - `tart exec` without `-t` has no terminal, so `/dev/tty` reads fail. Test interactive prompts through a pty (`docs/demo/record.py` does this).
 - The VM `admin` password is `admin`.
+- `tart run ... &` returns before the VM is up. Wait until `tart list` shows it as `running`, then `tart ip --wait`. Without that wait, `tart ip` fails with `VM is not running`.
+- Start background VM jobs with stdin closed (`< /dev/null`) and test the start by hand once if a script fails at the first VM step.
+- Every pty helper needs a hard timeout. Clear the output buffer after each line you send, or `expect` matches the old prompt and you send the same answer many times. Wait for the child to exit with `waitpid(WNOHANG)`, not a blocking `waitpid` or "read until EOF" (`tart exec -t` keeps the pty open).
+- A test run that prints nothing for more than about 5 minutes is stuck. Look at `ps` and kill the helper. Do not wait for it.
+- `tart exec` has no tty, so `sudo` with a password fails there. If a test removes the passwordless sudo rule, put it back through a pty with the password, in the same helper.
+- After a test, delete the VMs it made (`hb-test`, `hb-demo`, and so on). Keep only the OCI base images.
 
 ## Recording the clips
 
@@ -47,6 +53,6 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 
 ## Before you finish a session
 
-1. Run `bash -n` on scripts. Run shellcheck and markdownlint if they are available (CI runs them).
+1. Run `bash -n` on scripts. Run shellcheck and markdownlint if they are available (CI runs them). Join them to `git commit` with `&&`, never `;`, so a lint error stops the commit.
 2. Update `HANDOFF.md` and, if the test results change, `docs/test-results.md`.
 3. Commit with a clear message. The harness adds the attribution lines.
