@@ -62,13 +62,14 @@ Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirrusl
 
 Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
 
-**Remaining (2026-11-25, after rollback tests and the no-matrix decision). Everything else below is done.**
+**State at the end of the 2026-11-25 session: the only open item is 1 (a real-Mac test by the user). CI is green and the working tree is clean. Everything else below is done.**
 
 1. User task, later: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
 2. Done (2026-11-25): all seven casts uploaded to asciinema.org as unlisted (private-pattern scan: 0 hits). Each GIF in `docs/getting-started.md` has a "Watch this clip with pause and copy" link. After you re-record a clip, upload it again (`asciinema upload --visibility unlisted docs/casts/NAME.cast`) and update its link. Old uploads stay online until the user deletes them on asciinema.org.
-3. Check once that the drift workflow works: `gh workflow run drift-check.yml`, then `gh run list --workflow drift-check.yml --limit 1` and `gh issue list --label upstream-drift`. Refresh snapshots with `scripts/drift-check.sh --update` after review when upstream changes.
+3. Done (2026-11-25): `gh workflow run drift-check.yml` ran green and opened no `upstream-drift` issue (snapshots match upstream). The weekly run is on. When an issue appears, review it, then refresh with `scripts/drift-check.sh --update`.
 4. Dropped by the user (2026-11-25): GUI screenshots, a `.pkg` cask test, a scheduled macOS-runner re-test, changing the demo passwords.
-5. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).
+5. This session also: Part 2 clip re-recorded (`02-get-files`, real clone; `prepare.sh` now waits for the VM), pty prompt tests and a rollback test added to `tests/tart-test.sh`, `CLAUDE.md` got the Tart and lint rules. All Tart test VMs are deleted; only the OCI base image remains.
+6. Test rules: tests run on the newest macOS that Tart offers. No version matrix (user decision). Read the Tart rules in `CLAUDE.md` before a test run (VM start wait, pty timeouts, delete VMs after).
 
 Details of finished work:
 
