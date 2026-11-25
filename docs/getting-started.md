@@ -78,8 +78,6 @@ When a command asks for a password, no characters show on the screen. This is no
    If a window asks you to install the command line developer tools, click **Install**.
    Wait until it finishes. Then type the command again.
 
-   ![git --version shows the version of Git.](images/02-git.gif)
-
 3. Go to your home folder:
 
    ```sh
@@ -97,6 +95,8 @@ When a command asks for a password, no characters show on the screen. This is no
    ```sh
    cd homebrew-shared-mac
    ```
+
+   ![Steps 2 to 5: check Git, go to the home folder, download the files, go into the new folder.](images/02-get-files.gif)
 
 ## Part 3: Check Homebrew
 

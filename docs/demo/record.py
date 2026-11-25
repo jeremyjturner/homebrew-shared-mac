@@ -195,6 +195,12 @@ def as_admin(s):
     s.line("PROMPT='$ '; cd ~/homebrew-shared-mac; clear")
 
 
+def fresh_home(s):
+    """Hidden: set the copied scripts aside, so that 'git clone' has an empty home folder."""
+    vm_sh("cd ~ && rm -rf .hb-stash && mv homebrew-shared-mac .hb-stash")
+    s.line("PROMPT='$ '; cd ~; clear")
+
+
 def as_bob(extra=""):
     def f(s):
         s.line("su - bob")
@@ -215,8 +221,20 @@ def clip_start_state(s):
     s.run("ls -ld /opt/homebrew")
 
 
-def clip_git(s):
-    s.run("git --version")
+REPO_URL = "https://github.com/jeremyjturner/homebrew-shared-mac.git"
+
+
+def clip_get_files(s):
+    """Part 2, steps 2 to 5. The real clone from GitHub, into the home folder."""
+    try:
+        s.run("git --version")
+        s.run("cd ~")
+        s.run("git clone " + REPO_URL, pause=1.5)
+        s.run("cd homebrew-shared-mac")
+        time.sleep(2.0)
+    finally:
+        # Put the copied scripts back (prepare.sh made them) so that the later clips work.
+        vm_sh("cd ~ && rm -rf homebrew-shared-mac && mv .hb-stash homebrew-shared-mac")
 
 
 def clip_check(s):
@@ -269,7 +287,7 @@ def warm_up_homebrew():
 
 CLIPS = [
     ("01-start-state", as_admin, clip_start_state, None),
-    ("02-git", as_admin, clip_git, None),
+    ("02-get-files", fresh_home, clip_get_files, None),
     ("03-check", as_admin, clip_check, None),
     ("04-setup", as_admin, clip_setup, None),
     ("05-wrapper", as_admin, clip_wrapper, warm_up_homebrew),

@@ -25,7 +25,7 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protec
 
 - **Single script (2026-11-25):** `scripts/setup.sh` checks Homebrew (install method, owners, accounts, who uses brew), fixes the wrong-owner/mixed-owner problem, creates the hidden owner account (user picks name and password), installs the wrapper, and writes a report file for the user's own AI agent. `--check` changes nothing. `--yes --password-stdin --owner NAME` is for tests. Tested in Tart: problem, mixed owners, fix, re-run (no-op), drift. The interactive prompts (read from `/dev/tty`) were recorded in `docs/images/04-setup.gif`; `tart exec` without a tty cannot test them.
 - `docs/getting-started.md` was rewritten for this flow (Parts 1-7, no Tart mentions). Still to do: README rewrite (Mac Admins summary and link, greenfield path vs. already-broken path, plain language), guide for the greenfield path, test-results round 4, shellcheck/markdownlint (not run on the host).
-- The `git clone` URL in the guide needs the repo to be public. The clip for Part 2 shows only `git --version`.
+- The `git clone` URL in the guide needs the repo to be public. The clip for Part 2 (`02-get-files`) shows steps 2 to 5 with a real clone from GitHub.
 - The pristine image's Homebrew is 7.0.12; `docs/test-results.md` still says 7.0.16 (from the old `tahoe-base`). Update the compatibility table after a new test round.
 - The user's own video `2026-11-24 23-46-35.mp4` sits untracked in the repo root. Do not commit it.
 - Dependabot PRs #1 and #2 are closed and their branches are gone.

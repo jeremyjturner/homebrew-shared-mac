@@ -6,7 +6,9 @@ BASE=${1:-ghcr.io/cirruslabs/macos-tahoe-base:latest}; VM=hb-demo; HERE=$(cd "$(
 tart stop "$VM" 2>/dev/null || true
 tart delete "$VM" 2>/dev/null || true
 tart clone "$BASE" "$VM"
-tart run --no-graphics "$VM" >/dev/null 2>&1 &
+tart run --no-graphics "$VM" >/dev/null 2>&1 < /dev/null &
+# tart run returns before the VM is up: wait until it is listed as running.
+until tart list | grep -q "$VM.*running"; do sleep 2; done
 tart ip "$VM" --wait 120 >/dev/null
 # Copy the repo scripts into the VM (base64: robust through tart exec).
 tar -C "$HERE" -c scripts | base64 | tr -d '\n' > "${TMPDIR:-/tmp}/hb-demo.b64"
