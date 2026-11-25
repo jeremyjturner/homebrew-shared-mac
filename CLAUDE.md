@@ -31,7 +31,23 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 - `tart run ... &` returns before the VM is up. Wait until `tart list` shows it as `running`, then `tart ip --wait`. Without that wait, `tart ip` fails with `VM is not running`.
 - Start background VM jobs with stdin closed (`< /dev/null`) and test the start by hand once if a script fails at the first VM step.
 - Every pty helper needs a hard timeout. Clear the output buffer after each line you send, or `expect` matches the old prompt and you send the same answer many times. Wait for the child to exit with `waitpid(WNOHANG)`, not a blocking `waitpid` or "read until EOF" (`tart exec -t` keeps the pty open).
-- A test run that prints nothing for more than about 5 minutes is stuck. Look at `ps` and kill the helper. Do not wait for it.
+- A test run that prints nothing for more than about 5 minutes is stuck. Look at `ps` and kill the helper. Do not wait for it. A background-task notice only comes when the job ends, so a hung job gives no notice. **You must watch the log yourself.**
+- Start every `tests/tart-test.sh` run (and any other long VM job) with a stall watchdog. Send the job's output to a log file, then loop on the log's age. Stop at 4 minutes of silence, kill `tests/tart-test.sh` and `tart exec`, run `tart stop` and read the log tail. Never start a long job and only wait for its notice. Use this pattern:
+
+  ```sh
+  L=/private/tmp/NAME.log
+  (bash tests/tart-test.sh < /dev/null > $L 2>&1; echo "exit=$?" >> $L) &
+  sleep 20
+  for i in $(seq 1 100); do
+    grep -q '^exit=' $L && break
+    [ $(( $(date +%s) - $(stat -f %m $L) )) -gt 240 ] && { echo STALLED; break; }
+    sleep 5
+  done
+  ```
+
+  A tool call stops at 10 minutes (`timeout` 600000 at most). Keep each wait under that and watch again if the job still runs. Check `ps` and the log age every time you come back.
+- Known hang: `brew uninstall --cask` in the VM can wait for a macOS Automation prompt (the login item "System Events" step). It does not always happen. Kill the run at the stall limit and run it once more. If it hangs twice at the same step, stop and report it. Do not retry in a loop.
+- Give every VM command a reason to end. Test a new check by hand on a VM first, if it can wait for input (a prompt, a password, a pager). Add `< /dev/null` and `HOMEBREW_NO_ENV_HINTS=1` where it fits.
 - `tart exec` has no tty, so `sudo` with a password fails there. If a test removes the passwordless sudo rule, put it back through a pty with the password, in the same helper.
 - After a test, delete the VMs it made (`hb-test`, `hb-demo`, and so on). Keep only the OCI base images.
 
@@ -48,7 +64,7 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 
 - macOS `/bin/bash` is 3.2: no associative arrays, no `mapfile`, empty arrays break under `set -u`.
 - zsh stops a `&&` chain when a glob matches nothing (for example `rm *.gif` with no files). Use `ls` or `find` to test first.
-- Run long jobs with `run_in_background` and wait for the notification. Do not poll with `sleep`.
+- A long job that must not stall (a VM test) runs under the watchdog in the Testing section: that loop is the one allowed use of `sleep`. Jobs that always end by themselves (a plain build or lint) can use `run_in_background` and wait for the notice.
 - Do not chain edits and a render in one command. If an early step fails, the later step can still run an old version.
 
 ## Before you finish a session
