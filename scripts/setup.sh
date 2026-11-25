@@ -242,6 +242,7 @@ diagnose() {
   pgrep -x brew >/dev/null 2>&1 && BREW_RUNNING=1
   pgrep -fq 'Homebrew/brew.rb|Library/Homebrew/brew.sh' 2>/dev/null && BREW_RUNNING=1
   pgrep -x claude >/dev/null 2>&1 && CLAUDE_RUNNING=1
+  CLAUDE_USERS=$(ps -axo user=,comm= 2>/dev/null | awk '$2 ~ /(^|\/)claude$/ {print $1}' | sort -u | tr '\n' ' ')
 
   for u in $(human_accounts); do
     N_HUMANS=$((N_HUMANS + 1))
@@ -288,7 +289,11 @@ diagnose() {
   fi
   [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."
   [[ $BREW_RUNNING -eq 1 ]] && add_finding "A brew command is running now. Close it before you make changes."
-  [[ $CLAUDE_RUNNING -eq 1 ]] && add_finding "A Claude Code session is running. Close it before you make changes."
+  [[ $CLAUDE_RUNNING -eq 1 ]] && add_finding "A Claude Code session is running${CLAUDE_USERS:+ (account: ${CLAUDE_USERS% })}. Close it before you make changes."
+  while IFS=$'\t' read -r _ _ app; do
+    [[ -n $app ]] && pgrep -fq "$app/Contents/MacOS/" \
+      && add_finding "$(basename "$app") is open now (account: $(ps -axo user=,command= | awk -v a="$app/Contents/MacOS/" 'index($0,a){print $1; exit}')). Quit it before you make changes."
+  done <<<"$APPDIR_CASKS"
   [[ $ARCH == arm64 ]] || add_finding "This is not an Apple silicon Mac ($ARCH). This project supports $PREFIX only."
 }
 
@@ -503,7 +508,14 @@ disable_appdir_lines() {
 # owner account installs into /Applications, where it can update and remove the app.
 # --appdir is needed: brew remembers the folder of the first install and would reuse it.
 migrate_apps() {
-  local u cask app saved
+  local u cask app saved rule=/etc/sudoers.d/homebrew-shared-mac-temp
+  [[ -n $APPDIR_CASKS ]] || return 0
+  # Some casks (Steam, for example) ask for sudo when brew removes them. The hidden
+  # account has a random password, so nobody can type it. Allow it for this step only.
+  printf '%s ALL=(ALL) NOPASSWD: ALL\n' "$OWNER" >"$rule.tmp"
+  chmod 440 "$rule.tmp"
+  if visudo -cf "$rule.tmp" >/dev/null 2>&1; then mv "$rule.tmp" "$rule"; else rm -f "$rule.tmp"; fi
+  trap 'rm -f /etc/sudoers.d/homebrew-shared-mac-temp' EXIT
   while IFS=$'\t' read -r u cask app; do
     [[ -n $app ]] || continue
     saved=$BACKUP/apps/$u/$cask
@@ -517,6 +529,7 @@ migrate_apps() {
       mv "$saved/$(basename "$app")" "$app"
     fi
   done <<<"$APPDIR_CASKS"
+  rm -f "$rule"
 }
 
 final_check() {

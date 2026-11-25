@@ -131,3 +131,17 @@ PASS
 NOT TESTED
 
 - Older macOS versions. Decision (2026-11-25): tests run only on the newest macOS that Tart offers.
+
+ROUND 9 (casks that need sudo, 2026-11-25)
+
+Setup: `tests/tart-test.sh` in a fresh clone of the base image. A first run on a real Mac showed that a cask whose uninstall step calls `sudo` (Steam, launchctl service) asked for a password. The hidden account has a random password, so no one could answer.
+
+PASS
+
+- Steam installed in bob's `~/Applications`, then moved to `/Applications` by `setup.sh` with no password prompt. Brew still manages it. The temporary sudo rule (`/etc/sudoers.d/homebrew-shared-mac-temp`) is gone after the move. Rollback puts the app back. 43 checks passed, 0 failed.
+- Control: the same test with the previous `setup.sh` fails at `Removing launchctl service ... Password:`. So the new check catches the bug.
+- `--check` and the "Quit these apps" error now name the account that has the app open.
+
+NOT TESTED
+
+- The "Terminal would like to administer your computer" window (needs a GUI session).

@@ -159,7 +159,10 @@ Its name is `shared-brew-report-<date>.txt`.
    Press Return to use `homebrew`, or type your own name.
 4. Read the plan.
    Type `y` and press Return to continue.
-5. Wait for the lines that start with `PASS`.
+5. macOS can show this window: "Terminal would like to administer your computer."
+   Click **Allow**.
+   The script needs it to create the hidden account.
+6. Wait for the lines that start with `PASS`.
 
 The script also does these steps for you, and the plan lists them:
 
@@ -170,7 +173,8 @@ The script also does these steps for you, and the plan lists them:
   Homebrew installs them again in `/Applications`.
   The old copies stay in the backup folder.
   The script stops and tells you if one of these apps is open.
-  Quit the app and run the script again.
+  It also tells you which account has the app open.
+  Quit the app in that account and run the script again.
 
 The script saves every change in `/usr/local/share/homebrew-shared-mac/backups`.
 To undo all of it, go to [Rollback](#rollback).

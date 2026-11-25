@@ -41,7 +41,7 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protec
 - Every change goes into `/usr/local/share/homebrew-shared-mac/backups/TIMESTAMP/manifest` (apps in `apps/`, file copies in `files/`). `sudo ./scripts/setup.sh --rollback [--backup DIR]` reverses it from last to first. Rollback leaves moved apps unmanaged by brew.
 - Apps are found through the Caskroom symlinks that point into `~/Applications`. A running app stops the script before any change.
 - Full `tests/tart-test.sh` passed (run 5): new checks for the report, migration, wrapper lines, script rollback, then re-setup and the manual rollback.
-- Still open: clips 04 (no wrapper question any more) and 06 (wrapper is already added) are out of date and need re-recording; `docs/test-results.md` needs a round for this; not committed yet; the real-Mac run (user: jeremyjturner owns the prefix, godzillanintenbro has Firefox, OBS, Steam in `~/Applications`) has not happened.
+- Still open: clips 04 (no wrapper question any more) and 06 (wrapper is already added) are out of date and need re-recording; `docs/test-results.md` needs a round for this; not committed yet; the first real-Mac run is described below.
 
 ## Rules from the user
 
@@ -91,3 +91,10 @@ Details of finished work:
 7. **Housekeeping:** old Tart VMs were deleted 2026-11-25 with user approval. Playback speed 0.75 is confirmed. The `.cast` player is the user's task for another day. `asciinema` and `agg` are still installed on the host (user-approved; the clips need them).
 8. **Lint on the host:** `shellcheck` and `markdownlint-cli2` are installed (user-approved 2026-11-25) and run clean. CI also runs them.
 9. `tests/tart-test.sh` now makes random passwords per run. `docs/demo/prepare.sh` and `record.py` still use fixed demo passwords (`bobpw`, `demo-password`) because they are typed on screen in the clips. Changing them means re-recording.
+
+## First real-Mac run (2026-11-25)
+
+- Result: setup failed on Steam. Brew runs as the hidden account, and Steam's uninstall calls `sudo`. Fix: `migrate_apps` writes a temporary `/etc/sudoers.d/homebrew-shared-mac-temp` rule for the owner, removed at the end and by an EXIT trap. `tests/tart-test.sh` now installs Steam; it fails with the old script and passes with the new one (round 9).
+- `--check` and the open-app error now name the account (`ps` user). Guide mentions the "Terminal would like to administer your computer" window.
+- Real Mac state after the failed run: the hidden account and owner change were done; Steam stayed in `~/Applications` and brew's Steam record may be half removed. The user should run `sudo ./scripts/setup.sh --rollback` or check `brew list --cask`, quit Firefox and Claude Code in both accounts, then run the new script.
+- Open: re-record clip 04 (new popup step), a failed reinstall should leave a clear message about the cask's brew state.

@@ -26,6 +26,10 @@ x "sudo -u bob -H sh -c 'mkdir -p ~/Applications && echo export HOMEBREW_CASK_OP
 x 'sudo chmod 777 /Users/bob/Applications'
 x '/opt/homebrew/bin/brew install --cask --appdir=/Users/bob/Applications rectangle'
 check "setup: the cask app is in bob's ~/Applications" 'test -d /Users/bob/Applications/Rectangle.app'
+# Steam asks for sudo when brew removes it (launchctl). The hidden account has no password, so the
+# script must allow sudo for it during the move.
+x '/opt/homebrew/bin/brew install --cask --appdir=/Users/bob/Applications steam'
+check "setup: steam is in bob's ~/Applications" 'test -d /Users/bob/Applications/Steam.app'
 x 'cd /tmp && sudo ./setup.sh --check --report /tmp/report-before.txt'
 check "report flags bob's HOMEBREW_CASK_OPTS --appdir" 'grep -q "bob  .zshrc: export HOMEBREW_CASK_OPTS" /tmp/report-before.txt'
 check "report lists the cask app in bob's ~/Applications" 'grep -q "bob  rectangle  /Users/bob/Applications/Rectangle.app" /tmp/report-before.txt'
@@ -43,6 +47,8 @@ check "wrapper loads in a new login shell (admin)" 'zsh -ilc "type brew" 2>/dev/
 check "script added the wrapper to bob's ~/.zshrc" 'sudo grep -q "^source /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh" /Users/bob/.zshrc'
 check "script turned off bob's --appdir line" 'sudo grep -q "^# homebrew-shared-mac disabled: export HOMEBREW_CASK_OPTS" /Users/bob/.zshrc && ! sudo grep -q "^export HOMEBREW_CASK_OPTS" /Users/bob/.zshrc'
 check "cask app moved to /Applications and is gone from bob's ~/Applications" 'test -d /Applications/Rectangle.app && ! test -e /Users/bob/Applications/Rectangle.app'
+check "steam (needs sudo to uninstall) moved to /Applications" 'test -d /Applications/Steam.app && ! test -e /Users/bob/Applications/Steam.app'
+check "the temporary sudo rule is removed" '! test -e /etc/sudoers.d/homebrew-shared-mac-temp && ! ls /etc/sudoers.d | grep -q "homebrew-shared-mac"'
 check "brew still manages the cask" '/opt/homebrew/bin/brew list --cask rectangle | grep -q "/Applications/Rectangle.app\|Rectangle.app"'
 check "old app is kept in the backup folder" 'sudo find /usr/local/share/homebrew-shared-mac/backups -name Rectangle.app | grep -q .'
 check "wrapper loads in a new login shell (bob)" 'sudo -u bob -H /bin/zsh -ilc "type brew" 2>/dev/null | grep -q "shell function"'
