@@ -194,3 +194,9 @@ Fixed
 - New checks in `tests/tart-test.sh`: a person-owned app is flagged, setup fixes the owner, and `brew reinstall --cask` then works with no password. The script rollback runs twice (the newest backup is the owner change, then the main setup).
 
 Tart check: the full `tests/tart-test.sh` passed (64 PASS, 0 FAIL). The known cask-uninstall hang appeared once and cleared by itself. Not done: the check against the old script to see it fail.
+
+## Round 13: adopted casks
+
+- Real Mac: `bambu-studio` and `chatgpt` had a real app copy in the Caskroom instead of a symlink, so `brew upgrade --cask` failed with "already an App at".
+- `setup.sh` now lists those apps (also when the owner is right), moves the copy to the backup and puts the usual symlink in its place. `--rollback` puts the copy back (`caskroom_link`).
+- New Tart checks: `--check` flags the second copy, setup makes it a link, rollback restores it, a second setup fixes it again, `brew reinstall` works. Full run: 82 PASS, 0 FAIL.

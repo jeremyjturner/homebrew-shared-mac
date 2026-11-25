@@ -66,6 +66,22 @@ x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-foreig
 # shellcheck disable=SC2016  # $(stat) must run in the VM, not here
 check "setup gives the app to the hidden account" 'test "$(stat -f %Su /Applications/Rectangle.app)" = homebrew'
 check "brew can reinstall the app without a sudo password" 'cd /tmp && /opt/homebrew/bin/brew as-brew-user reinstall --cask rectangle < /dev/null'
+# Regression: an "adopted" cask. The Caskroom holds a real copy of the app instead of a link,
+# and "brew upgrade" stops with "already an App at". Fake it, then let the script fix it.
+# shellcheck disable=SC2016  # must expand in the VM, not here
+x 'cd /tmp && C=$(ls -d /opt/homebrew/Caskroom/rectangle/*/ | head -1) && sudo rm "${C}Rectangle.app" && sudo cp -R /Applications/Rectangle.app "${C}Rectangle.app" && sudo chown -R bob /Applications/Rectangle.app'
+check "--check flags a cask with a second copy in the Caskroom" 'cd /tmp && sudo ./setup.sh --check --report /tmp/report-adopted.txt 2>&1 | grep -q "second copy"'
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-adopted2.txt"
+check "setup turns the Caskroom copy into a link" 'test -L /opt/homebrew/Caskroom/rectangle/*/Rectangle.app'
+# shellcheck disable=SC2016  # $(stat) must run in the VM, not here
+check "setup gives the adopted app to the hidden account" 'test "$(stat -f %Su /Applications/Rectangle.app)" = homebrew'
+# Rollback of this fix: the second copy comes back, then the script fixes it again.
+x "cd /tmp && sudo ./setup.sh --rollback --yes"
+# shellcheck disable=SC2016  # glob must expand in the VM, not here
+check "rollback puts the second copy back in the Caskroom" 'test -d /opt/homebrew/Caskroom/rectangle/*/Rectangle.app && ! test -L /opt/homebrew/Caskroom/rectangle/*/Rectangle.app'
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report-adopted3.txt"
+check "setup turns the Caskroom copy into a link again" 'test -L /opt/homebrew/Caskroom/rectangle/*/Rectangle.app'
+check "brew upgrade --force works on the fixed cask" 'cd /tmp && /opt/homebrew/bin/brew as-brew-user reinstall --cask rectangle < /dev/null'
 # Negative control: plain brew doctor as a non-owner shows the misleading chown advice.
 check "control: plain brew doctor shows the chown advice" 'sudo -u bob -H /bin/zsh -c "/opt/homebrew/bin/brew doctor 2>&1" | grep -q "should change the ownership"'
 # shellcheck disable=SC2016  # \$PATH must expand in the VM, not here
@@ -91,7 +107,8 @@ check "documented dscl password reset works" "sudo dscl . -passwd /Users/homebre
 x 'sudo rm /etc/sudoers.d/zz-test'
 if [ -z "$(x 'find /opt/homebrew ! -user homebrew | head -1')" ]; then echo "PASS ownership"; else echo "FAIL ownership"; exit 1; fi
 # Script rollback: undoes the account, owner, wrapper lines, --appdir line and moved apps.
-# The newest backup is the app-owner change; the second rollback undoes the main setup.
+# The newest backup is the adopted-cask fix, then the app-owner change, then the main setup.
+x "cd /tmp && sudo ./setup.sh --rollback --yes"
 x "cd /tmp && sudo ./setup.sh --rollback --yes"
 x "cd /tmp && sudo ./setup.sh --rollback --yes"
 check "script rollback: the old app is back in bob's ~/Applications" 'test -d /Users/bob/Applications/Rectangle.app'

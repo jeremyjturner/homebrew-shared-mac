@@ -130,6 +130,11 @@ find_appdir_casks() {
 # Casks that brew installed into /Applications, but another account owns the app (a person
 # or root). The owner account cannot write there, so brew asks for the owner's sudo
 # password on update or remove, and nobody knows it. Prints: owner<TAB>cask<TAB>app path.
+#
+# Some apps have no symlink: the Caskroom holds a real copy of the app (brew --adopt, or an
+# old failed upgrade). Then "brew upgrade" stops with "It seems there is already an App at".
+# Those apps are always listed, whoever owns them. The 4th field is the copy in the Caskroom
+# ("-" when there is a normal symlink).
 find_foreign_apps() {
   local l app o
   [[ -d $PREFIX/Caskroom ]] || return 0
@@ -139,7 +144,14 @@ find_foreign_apps() {
         o=$(stat -f %Su "$app" 2>/dev/null)
         [[ -n $o ]] || continue
         if [[ -n $OWNER_NOW ]] && is_service "$OWNER_NOW" && [[ $o == "$OWNER_NOW" ]]; then continue; fi
-        printf '%s\t%s\t%s\n' "$o" "$(echo "${l#"$PREFIX/Caskroom/"}" | cut -d/ -f1)" "$app"
+        printf '%s\t%s\t%s\t-\n' "$o" "$(echo "${l#"$PREFIX/Caskroom/"}" | cut -d/ -f1)" "$app"
+      done
+  find "$PREFIX/Caskroom" -mindepth 3 -maxdepth 3 -type d -name '*.app' 2>/dev/null \
+    | while read -r l; do
+        app=/Applications/$(basename "$l"); [[ -d $app && ! -L $app ]] || continue
+        o=$(stat -f %Su "$app" 2>/dev/null)
+        [[ -n $o ]] || continue
+        printf '%s\t%s\t%s\t%s\n' "$o" "$(echo "${l#"$PREFIX/Caskroom/"}" | cut -d/ -f1)" "$app" "$l"
       done
 }
 
@@ -187,6 +199,7 @@ do_rollback() {
     case $kind in
       app_chowned)      say "  - give $a back its old owner '$b'" ;;
       app_moved)        say "  - put $c back (the cask '$b' returns to its old folder)" ;;
+      caskroom_link)    say "  - put the old copy of '$b' back in the Caskroom" ;;
       appdir_disabled)  say "  - turn the HOMEBREW_CASK_OPTS line back on in $a" ;;
       wrapper_added)    say "  - remove the brew wrapper line from $a" ;;
       owner_before)     say "  - give $PREFIX back to '$a'" ;;
@@ -201,6 +214,9 @@ do_rollback() {
     case $kind in
       app_chowned)   # a=app path b=old owner c=old group
         chown -R "$b:$c" "$a" && say "Gave $a back to '$b'." ;;
+      caskroom_link)   # a=Caskroom path (now a link) b=cask c=saved copy
+        if [[ -L $a && -d $c ]]; then rm "$a" && mv "$c" "$a" && say "Put back the old copy of '$b' in the Caskroom."
+        else warn "Could not put back $a."; fi ;;
       app_moved)   # a=user b=cask c=original path; the saved app is in the backup folder
         "$BREW" as-brew-user uninstall --cask --force "$b" </dev/null >/dev/null 2>&1 \
           || warn "Could not remove the new copy of '$b'. Check /Applications."
@@ -320,7 +336,7 @@ diagnose() {
     add_finding "The owner account cannot update or remove them there. The script moves them to /Applications."
   fi
   if [[ -n $FOREIGN_APPS ]]; then
-    add_finding "Brew apps in /Applications that another account owns: $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | sort -u | tr '\n' ' ')"
+    add_finding "Brew apps in /Applications that brew cannot update (another account owns them, or brew keeps a second copy): $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | sort -u | tr '\n' ' ')"
     add_finding "Without a fix, brew asks for a password that nobody knows when it updates them. The script gives them to '${OWNER_NOW:-the hidden account}'."
   fi
   [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."
@@ -478,8 +494,10 @@ print_plan() {
   fi
   if [[ -n $FOREIGN_APPS ]]; then
     n=$((n + 1)); say "  $n. Give these apps in /Applications to '$OWNER', so brew can update them:"
-    while IFS=$'\t' read -r u cask app; do
-      [[ -n $app ]] && say "       $cask  ($app, now owned by $u)"
+    while IFS=$'\t' read -r u cask app stale; do
+      [[ -n $app ]] || continue
+      say "       $cask  ($app, now owned by $u)"
+      [[ ${stale:--} != "-" ]] && say "         Brew also keeps a second copy of the app. The script replaces it with a link."
     done <<<"$FOREIGN_APPS"
   fi
   n=$((n + 1)); say "  $n. Check the result."
@@ -581,15 +599,30 @@ migrate_apps() {
 }
 
 fix_foreign_apps() {
-  local o cask app g
-  while IFS=$'\t' read -r o cask app; do
+  local o cask app g stale saved
+  while IFS=$'\t' read -r o cask app stale; do
     [[ -n $app && -d $app ]] || continue
-    g=$(stat -f %Sg "$app")
-    if chown -R "$OWNER:admin" "$app"; then
-      record app_chowned "$app" "$o" "$g"
-      say "Gave $app to '$OWNER'."
-    else
-      warn "Could not change the owner of $app."
+    if [[ $o != "$OWNER" ]]; then
+      g=$(stat -f %Sg "$app")
+      if chown -R "$OWNER:admin" "$app"; then
+        record app_chowned "$app" "$o" "$g"
+        say "Gave $app to '$OWNER'."
+      else
+        warn "Could not change the owner of $app."
+      fi
+    fi
+    # Replace the second copy in the Caskroom with the link that brew normally keeps.
+    if [[ ${stale:--} != "-" && -d $stale && ! -L $stale ]]; then
+      saved=$BACKUP/apps/caskroom/$cask
+      install -d -m 700 "$saved"
+      if mv "$stale" "$saved/" && ln -s "$app" "$stale"; then
+        chown -h "$OWNER:admin" "$stale"
+        record caskroom_link "$stale" "$cask" "$saved/$(basename "$stale")"
+        say "Brew now links '$cask' to $app."
+      else
+        warn "Could not fix the Caskroom copy of '$cask'."
+        [[ -e $stale ]] || mv "$saved/$(basename "$stale")" "$stale"
+      fi
     fi
   done <<<"$FOREIGN_APPS"
 }
@@ -617,7 +650,7 @@ final_check() {
   else say "FAIL  an --appdir setting or a brew app is still in a ~/Applications folder"; fail=1; fi
   FOREIGN_APPS=$(find_foreign_apps | sort -u)
   if [[ -z $FOREIGN_APPS ]]; then say "PASS  '$OWNER' owns every brew app in /Applications"
-  else say "FAIL  another account owns these brew apps: $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | tr '\n' ' ')"; fail=1; fi
+  else say "FAIL  brew cannot update these apps (another account owns them, or a second copy is left): $(printf '%s\n' "$FOREIGN_APPS" | cut -f2 | tr '\n' ' ')"; fail=1; fi
   return $fail
 }
 
