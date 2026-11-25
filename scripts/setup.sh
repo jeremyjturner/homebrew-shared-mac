@@ -548,10 +548,12 @@ install_wrapper() {
   install_wrapper_files
   for u in $MISSING_WRAPPER; do
     zr=$(user_home "$u")/.zshrc
-    if [[ -e $zr ]]; then backup_file "$zr"; else : >"$zr"; chown "$u" "$zr"; fi
+    # Write as the account that owns the file, never as root. The file is in a folder
+    # that the account controls. A link there must not lead root to another file.
+    if [[ -e $zr ]]; then backup_file "$zr"; else sudo -u "$u" touch "$zr" || { warn "Could not create $zr"; continue; }; fi
     # Start on a new line if the file does not end with one.
-    [[ -s $zr && -n $(tail -c1 "$zr") ]] && printf '\n' >>"$zr"
-    printf '%s\n' "$WRAPPER_LINE" >>"$zr"
+    [[ -s $zr && -n $(tail -c1 "$zr") ]] && { printf '\n' | sudo -u "$u" tee -a "$zr" >/dev/null; }
+    printf '%s\n' "$WRAPPER_LINE" | sudo -u "$u" tee -a "$zr" >/dev/null
     record wrapper_added "$zr"
     say "Added the wrapper to $zr"
   done
