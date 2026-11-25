@@ -25,6 +25,8 @@ set -u -o pipefail
 
 PREFIX=/opt/homebrew
 BREW=$PREFIX/bin/brew
+# Hide brew's sudo-domain warning and hints: they are harmless but look like errors.
+export HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1 HOMEBREW_NO_ENV_HINTS=1
 OWNER=""
 FIRST_UID=600
 SHARE_DIR=/usr/local/share/homebrew-shared-mac
@@ -284,7 +286,9 @@ diagnose() {
   [[ $N_USING -gt 1 && $STATE == problem ]] && add_finding "$N_USING people use Homebrew on this Mac, so they will collide."
   [[ -n $APPDIR_USERS ]] && add_finding "HOMEBREW_CASK_OPTS sets --appdir for: $APPDIR_USERS. Brew ignores it after the fix. The script turns it off."
   if [[ -n $APPDIR_CASKS ]]; then
-    add_finding "$(printf '%s\n' "$APPDIR_CASKS" | wc -l | tr -d ' ') cask app(s) are in a user's ~/Applications: $(printf '%s\n' "$APPDIR_CASKS" | cut -f2 | sort -u | tr '\n' ' ')"
+    n_apps=$(printf '%s\n' "$APPDIR_CASKS" | wc -l | tr -d ' ')
+    if [[ $n_apps -eq 1 ]]; then app_word="cask app is"; else app_word="cask apps are"; fi
+    add_finding "$n_apps $app_word in a user's ~/Applications: $(printf '%s\n' "$APPDIR_CASKS" | cut -f2 | sort -u | tr '\n' ' ')"
     add_finding "The owner account cannot update or remove them there. The script moves them to /Applications."
   fi
   [[ -n $MISSING_WRAPPER ]] && add_finding "The brew wrapper is missing for: $MISSING_WRAPPER."

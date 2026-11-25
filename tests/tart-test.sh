@@ -38,7 +38,8 @@ check "report lists the cask app in bob's ~/Applications" 'grep -q "bob  rectang
 x 'sudo mv /etc/sudoers.d/admin-nopasswd /tmp/admin-nopasswd.bak'
 python3 "$HERE/tests/pty-test.py" "$VM" admin
 # The real setup script, non-interactive: creates the hidden account and changes the owner.
-x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report.txt"
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report.txt 2>&1 | tee /tmp/setup-out.txt"
+check "setup output has no brew sudo-domain warning or env hint" '! grep -q "gui/\*\|Hide these hints" /tmp/setup-out.txt'
 x 'test -s /tmp/report.txt'
 x '/opt/homebrew/bin/brew as-brew-user update'
 x 'echo "bob ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/zz-test >/dev/null'

@@ -104,3 +104,9 @@ Details of finished work:
 - Pushed: `e2e89a3` (sudo fix, account names, docs, round 9) and `5173b88`, `ceb1380` (clips 03, 04, 06 re-recorded; `prepare.sh` now makes bob a Homebrew user, `record.py` clip 06 starts with `type brew`). Clips 04 and 06 match the current script. Clip 05 is unchanged.
 - Next: the user runs the new script on the real Mac and brings the results back. Steps: `sudo ./scripts/setup.sh --rollback` (or check `brew list --cask`), quit Firefox and Claude Code in both accounts, `sudo ./scripts/setup.sh --check`, then `sudo ./scripts/setup.sh`. Things to look at in the results: the Steam move with no password prompt, the temporary rule `/etc/sudoers.d/homebrew-shared-mac-temp` is gone, the account names in `--check`, the final PASS lines.
 - Open: CI result for the pushed commits not checked; a failed reinstall message; the "administer your computer" window cannot be tested in Tart.
+
+## Second real-Mac run (2026-11-25)
+
+- The user ran `--check` and the full `setup.sh` on the real Mac: Steam moved with no password prompt, all PASS lines, and Steam starts in the second account. Recorded as round 10 in `docs/test-results.md`.
+- Changes after that run (not committed yet at the time of writing): `setup.sh` sets `HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1` and `HOMEBREW_NO_ENV_HINTS=1`, and the "cask app(s)" wording is fixed. `tests/tart-test.sh` has a new check for the warning (full run: 44 PASS, 0 FAIL; `hb-test` deleted).
+- Open: the user still has the old-app backup in `/usr/local/share/homebrew-shared-mac/backups/` (delete when happy). A failed reinstall should leave a clear message about the cask's brew state. CI for the next push is not checked. The "administer your computer" window cannot be tested in Tart.

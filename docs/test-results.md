@@ -145,3 +145,24 @@ PASS
 NOT TESTED
 
 - The "Terminal would like to administer your computer" window (needs a GUI session).
+
+ROUND 10 (first successful real-Mac run, 2026-11-25)
+
+Setup: the user's own Mac (macOS 27.2.1, Homebrew 7.0.16, installed with the `.pkg`). The hidden account `homebrew` already owned `/opt/homebrew`. Two people accounts, both use Homebrew. Steam was in one user's `~/Applications`.
+
+PASS
+
+- `--check` found the Steam app and changed nothing. The full run moved Steam to `/Applications` with no password prompt, and all 5 PASS lines came back (owner, `brew --version`, wrapper, new Terminal window, no `--appdir`).
+- The user logged in to the second account and started Steam with no problem.
+- The temporary sudo rule is removed after the move (round 9 control).
+
+Found and fixed
+
+- Brew printed "running through sudo, using `user/*` instead of `gui/*`" and an `HOMEBREW_NO_ENV_HINTS` hint during the Steam uninstall. Both are harmless but look like errors. `setup.sh` now sets `HOMEBREW_SERVICES_NO_DOMAIN_WARNING=1` and `HOMEBREW_NO_ENV_HINTS=1`.
+- "1 cask app(s)" now reads "1 cask app is" or "N cask apps are".
+
+Tart check after the fix: `tests/tart-test.sh`, 44 checks passed, 0 failed. A new check confirms the setup output has no sudo-domain warning or hint.
+
+NOT TESTED
+
+- Steam's launch services under the user's GUI session in Tart. The real-Mac run covers this: Steam started.
