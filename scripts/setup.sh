@@ -537,7 +537,9 @@ apply() {
     record account_created "$OWNER"
     dscl . create "/Users/$OWNER" IsHidden 1 || die "Could not hide '$OWNER'."
     dscl . create "/Users/$OWNER" UserShell /usr/bin/false || die "Could not set the shell."
-    run_with_pw dscl . -authonly "$OWNER" >/dev/null 2>&1 || warn "The new account did not pass a test login."
+    # Not "dscl -authonly": it needs the password typed at a prompt and then hangs for a minute under expect.
+    dscl . -read "/Users/$OWNER" AuthenticationAuthority 2>/dev/null | grep -q ShadowHash \
+      || warn "The new account has no password."
     unset PW
     say "Created the hidden account '$OWNER'."
   fi
