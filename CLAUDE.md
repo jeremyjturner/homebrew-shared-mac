@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. Read `HANDOFF.md` first for the current state.
+Guidance for Claude Code in this repository. Read `HANDOFF.md` first for the current state. It is a local file: git ignores it, so it is not in the public repo and a fresh clone does not have it. Do not commit it. Keep anything a contributor needs in `docs/`, `CONTRIBUTING.md` or this file.
 
 ## Purpose
 
@@ -70,5 +70,5 @@ Tart, asciinema and the recordings are **test and maintainer tooling**. They are
 ## Before you finish a session
 
 1. Run `bash -n` on scripts. Run shellcheck and markdownlint if they are available (CI runs them). Join them to `git commit` with `&&`, never `;`, so a lint error stops the commit.
-2. Update `HANDOFF.md` and, if the test results change, `docs/test-results.md`.
+2. Update the local `HANDOFF.md` (not committed) and, if the test results change, `docs/test-results.md`.
 3. Commit with a clear message. The harness adds the attribution lines.
