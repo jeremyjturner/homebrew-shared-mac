@@ -45,6 +45,7 @@ This repository does that for you:
 - A small helper, the wrapper, goes in each person's `~/.zshrc`.
   It sends `brew` commands to the hidden account.
 - Each person types their own password to install software.
+- `brew update-all` updates and cleans everything with one command and one password.
 
 A copy of the Homebrew page is in [docs/upstream-snapshots](docs/upstream-snapshots/Homebrew-for-Mac-Admins.snapshot).
 A weekly check shows when the original page changes.
@@ -65,9 +66,10 @@ The folder has the wrong owner, or several owners.
 
 You want to avoid the problem from the start.
 
-1. Open the [new Mac guide](docs/new-mac.md).
-2. It installs Homebrew and adds the second account.
-3. It then sends you to the [getting started guide](docs/getting-started.md), Part 2.
+1. Open the [getting started guide](docs/getting-started.md).
+2. In Part 1, it shows you how to install Homebrew.
+3. Then follow Part 2 and the parts after it. The script creates the hidden account for you.
+   You do not need to create a second account first.
 
 ### Path C: let your AI assistant do it
 
