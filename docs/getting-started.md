@@ -392,7 +392,7 @@ It runs these steps in order:
 It asks for your password one time.
 Homebrew shows the list of upgrades and asks: `Do you want to proceed with the upgrade? [y/n]`.
 Type `y` and press Return.
-To skip that question, type `brew update-all --yes`.
+To skip that question, type `brew update-all --yes` (or `-y`).
 The command stops at the first step that fails.
 
 > **Note:** `update-all` is part of the wrapper. It is not a Homebrew command.

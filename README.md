@@ -45,7 +45,7 @@ This repository does that for you:
 - A small helper, the wrapper, goes in each person's `~/.zshrc`.
   It sends `brew` commands to the hidden account.
 - Each person types their own password to install software.
-- `brew update-all` updates and cleans everything with one command and one password.
+- `brew update-all` updates and cleans everything with one command and one password. See [Update everything](#update-everything-with-one-command).
 
 A copy of the Homebrew page is in [docs/upstream-snapshots](docs/upstream-snapshots/Homebrew-for-Mac-Admins.snapshot).
 A weekly check shows when the original page changes.
@@ -78,6 +78,29 @@ You use an AI assistant that can run commands on your Mac.
 1. Open the [AI assistant guide](docs/llm-prompt.md).
 2. Copy the prompt and paste it into your assistant.
 3. Read the plan. Say yes only if you agree. Type your own password when `sudo` asks.
+
+## Update everything with one command
+
+Homebrew asks for your password at every `brew` command.
+A full update is four commands, so it asks four times.
+The wrapper adds `brew update-all`. It asks one time.
+
+```sh
+brew update-all
+```
+
+![One password. The four steps run one after the other.](docs/images/08-update-all.gif)
+
+How it works:
+
+1. The wrapper switches to the hidden account one time. This is the one password.
+2. That account runs `brew update`, `brew upgrade`, `brew autoremove` and `brew cleanup`, one after the other.
+3. It stops at the first step that fails.
+4. Homebrew shows the list of upgrades and asks `[y/n]`. Add `--yes` (or `-y`) to skip the question.
+
+The script adds no sudo rule, so the password prompt stays the only boundary.
+`update-all` is not a Homebrew command. It works in a new Terminal window after the setup.
+Details: [getting started guide](docs/getting-started.md#update-everything-with-one-command).
 
 ## Quick look
 
@@ -161,6 +184,23 @@ To delete the account: `sudo sysadminctl -deleteUser homebrew`
 | 26.6.2 (Apple silicon, Tart VM) | 7.0.16 | Passed (earlier rounds) |
 
 Tests run on the newest macOS that Tart offers. Older macOS versions are not tested.
+
+### Security checks
+
+Every push and pull request runs these scans in GitHub Actions. They need no secrets and cost nothing:
+
+| Check | What it looks at |
+| --- | --- |
+| ShellCheck | The shell scripts. |
+| markdownlint | The docs. |
+| [gitleaks](https://github.com/gitleaks/gitleaks) | Passwords and keys in the whole git history. |
+| [zizmor](https://github.com/zizmorcore/zizmor) | Unsafe patterns in the workflow files. |
+| [CodeQL](https://codeql.github.com/) | The workflow files and the Python helpers. |
+| [OpenSSF Scorecard](https://scorecard.dev/) | The repository's own habits: pinned actions, branch protection, security policy. |
+| Dependabot | Updates for the pinned actions. |
+
+GitHub secret scanning and push protection are also on.
+Tools for languages this repository does not use (Rust, JavaScript and so on) are left out on purpose.
 
 ### Testing
 
