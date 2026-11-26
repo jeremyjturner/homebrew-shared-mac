@@ -1,6 +1,24 @@
 # Handoff
 
-Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protection on `main`: signed commits required, no force-push or deletion, admins included. CI (ShellCheck, markdownlint) passed on earlier commits; check the latest run.
+Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). The sections below are a log, newest topics near the top. Where an older section disagrees with "Current state", "Current state" is right.
+
+## Current state (2026-11-26)
+
+- **How changes reach `main`:** only by pull request. `main` requires signed commits and five passing checks (`Secret scan (gitleaks)`, `Workflow security (zizmor)`, `Analyze (actions)`, `Analyze (python)`, `lint`), admins included. No PR review is required. The user reviews each PR and wants real commits kept: merge with a merge commit (GitHub signs it), not a squash. Do not merge a PR until the user says so.
+- **Real Mac:** the user ran the current `setup.sh` and `brew update-all` on their own Mac on 2026-11-26 and both worked. The README compatibility table has a real-Mac row (macOS 27.2.1, Homebrew 7.0.16; the user confirmed it).
+- **Sudo cache (explained to the user):** after one correct password, `sudo` skips the prompt for about 5 minutes in the same Terminal window. A wrong password does not start the cache. `sudo -k` ends it. `brew update-all -y` is valid (alias of `--yes`).
+- **README:** "Does this reduce security?" is in "Details for administrators" (#13). It names the temporary sudo rule that `migrate_apps` writes, the extra administrator account, the sudo cache, and what the setup does not change.
+- **Last test results:** Tart, merged `main`: 82 PASS, 0 FAIL; round 14 (`update-all`): 83 PASS. Details in `docs/test-results.md`.
+
+### Open items
+
+- Scorecard first result (2026-11-26): score 6.6. Open alerts: Code-Review (no PR reviews), Maintained (repo under 90 days old), Security-Policy (4 of 10), SAST, Fuzzing, CII-Best-Practices. Branch-Protection shows -1 because the scan token cannot read admin settings. Nothing to fix for Fuzzing or CII. SECURITY.md could score higher.
+- zizmor warning `dependabot-cooldown` on `.github/dependabot.yml` (the check passes). Add a `cooldown` block in a separate PR.
+- Clip `08-update-all` has no asciinema.org link yet (upload needs the user's approval).
+- A failed cask reinstall should print a clear message about the cask's brew state.
+- The "administer your computer" window and the Dock icon cannot be tested in Tart.
+- The user can delete the old-app backup in `/usr/local/share/homebrew-shared-mac/backups/` when they are happy.
+- Parked by the user: a "find devices on local networks" prompt for `<unknown>` at logout (not traced).
 
 ## Security scanning (2026-11-26, merged in #11)
 
