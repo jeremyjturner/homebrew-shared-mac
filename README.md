@@ -150,7 +150,7 @@ It does not defend against a malicious administrator.
 It is better than the usual ways to share Homebrew.
 It does not help if you do not trust the other people on the Mac.
 
-**Where it is weaker than one person on one Mac**
+#### Where it is weaker than one person on one Mac
 
 | Change | Why it matters | When it matters |
 | --- | --- | --- |
@@ -162,7 +162,7 @@ The account is hard to misuse.
 Nobody knows its password: it is random, 24 characters, never shown, never saved, and not in command arguments.
 Its shell is `/usr/bin/false` and it is hidden from the login window.
 
-**Where it is stronger than the usual ways to share**
+#### Where it is stronger than the usual ways to share
 
 - Make the prefix group-writable: any administrator can change code that another person runs, with no prompt.
 - Run `chown` for whoever needs `brew` now: the next person gets the same error, and the last person's session owns the code.
@@ -171,7 +171,7 @@ Its shell is `/usr/bin/false` and it is hidden from the login window.
 Here, a program that runs as one person cannot change Homebrew without that person's password.
 Tested: a wrong password installs nothing.
 
-**What it does not change**
+#### What it does not change
 
 - Every person who runs `brew` must be an administrator. `sudo` is how they switch to the owner. A standard account has no `sudo` (not tested).
 - Administrators can become root, set the owner's password and change the wrapper. There is no protection against a malicious administrator.
