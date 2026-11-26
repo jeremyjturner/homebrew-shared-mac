@@ -2,6 +2,14 @@
 
 Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). Branch protection on `main`: signed commits required, no force-push or deletion, admins included. CI (ShellCheck, markdownlint) passed on earlier commits; check the latest run.
 
+## Security scanning (2026-11-26, branch `security-scanning`, not yet pushed)
+
+- New workflows: `security.yml` (zizmor, gitleaks pinned by SHA-256), `codeql.yml` (actions, python), `scorecard.yml`. Checkouts use `persist-credentials: false`. All actions pinned to SHAs.
+- Socket Basics was considered and left out: it has no bash rules, and this repo has no dependency manifests or Dockerfiles. gitleaks-action was left out because of its commercial licence.
+- Repo settings turned on with `gh api`: Dependabot alerts and security updates, secret scanning, push protection, private vulnerability reporting.
+- Not yet done: the workflows have not run (no push). gitleaks was not run on the history locally. Next: open a PR, read the first results, then make the checks required on `main` (branch protection, status checks).
+- README now has "Update everything with one command" (clip 08) and "Security checks".
+
 ## Done
 
 - Tart tests (two rounds) passed: see `docs/test-results.md`.
