@@ -382,6 +382,8 @@ brew update-all
 
 ![One password. The four steps run one after the other.](images/08-update-all.gif)
 
+[Watch this clip with pause and copy](https://asciinema.org/a/D6cg5alR39xlBc6H)
+
 It runs these steps in order:
 
 1. `brew update` gets the list of new versions.
