@@ -26,7 +26,7 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). The sections 
 - Socket Basics was considered and left out: it has no bash rules, and this repo has no dependency manifests or Dockerfiles. gitleaks-action was left out because of its commercial licence.
 - Repo settings turned on with `gh api`: Dependabot alerts and security updates, secret scanning, push protection, private vulnerability reporting.
 - `main` now requires these checks: `Secret scan (gitleaks)`, `Workflow security (zizmor)`, `Analyze (actions)`, `Analyze (python)`, `lint`. With signed commits and admin enforcement, every change to `main` goes through a PR. No PR review is required.
-- All checks passed on #11. gitleaks found nothing in the history. The first Scorecard result is not read yet: look in the Security tab.
+- All checks passed on #11. gitleaks found nothing in the history. The first Scorecard result is under Current state.
 - README has "Update everything with one command" (clip 08) and "Security checks".
 
 ## Done
@@ -51,12 +51,12 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). The sections 
 ## Open items to pick up
 
 - **Single script (2026-11-25):** `scripts/setup.sh` checks Homebrew (install method, owners, accounts, who uses brew), fixes the wrong-owner/mixed-owner problem, creates the hidden owner account (user picks name and password), installs the wrapper, and writes a report file for the user's own AI agent. `--check` changes nothing. `--yes --password-stdin --owner NAME` is for tests. Tested in Tart: problem, mixed owners, fix, re-run (no-op), drift. The interactive prompts (read from `/dev/tty`) were recorded in `docs/images/04-setup.gif`; `tart exec` without a tty cannot test them.
-- `docs/getting-started.md` was rewritten for this flow (Parts 1-7, no Tart mentions). Still to do: README rewrite (Mac Admins summary and link, greenfield path vs. already-broken path, plain language), guide for the greenfield path, test-results round 4, shellcheck/markdownlint (not run on the host).
+- `docs/getting-started.md` was rewritten for this flow (Parts 1-7, no Tart mentions). Done since: README rewrite, greenfield path (merged into Part 1), test-results round 4, shellcheck and markdownlint (CI runs them).
 - The `git clone` URL in the guide needs the repo to be public. The clip for Part 2 (`02-get-files`) shows steps 2 to 5 with a real clone from GitHub.
-- The pristine image's Homebrew is 7.0.12; `docs/test-results.md` still says 7.0.16 (from the old `tahoe-base`). Update the compatibility table after a new test round.
+- The pristine image's Homebrew is 7.0.12; `docs/test-results.md` has some rounds at 7.0.16 (from the old `tahoe-base`). The README compatibility table lists both, and a real-Mac row (2026-11-26).
 - Dependabot PRs #1 and #2 are closed and their branches are gone.
 - Git remote is SSH (`git@github.com:...`); the signing key is registered for both signing and authentication.
-- Suggested next: guide for the problem state (existing users, Homebrew already installed); then item 6 coverage gaps.
+- The guide for the problem state (existing users, Homebrew already installed) and the coverage gaps are done: see `docs/getting-started.md` and item 5 under "Details of finished work".
 - Demo clips: `record.py` refuses to run if `hb-demo` is down. VHS was dropped: `Wait+Screen` read stale screens. Recording now waits on the text stream.
 - `asciinema` and `agg` are installed on the host (user-approved 2026-11-25); `vhs`/`ttyd` from before are no longer used.
 - ssh-agent holds the signing key via keychain; if commits hang, re-run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519_signing` in a normal terminal.
@@ -67,7 +67,7 @@ Public GitHub repo `homebrew-shared-mac` (made public 2026-11-25). The sections 
 - Every change goes into `/usr/local/share/homebrew-shared-mac/backups/TIMESTAMP/manifest` (apps in `apps/`, file copies in `files/`). `sudo ./scripts/setup.sh --rollback [--backup DIR]` reverses it from last to first. Rollback leaves moved apps unmanaged by brew.
 - Apps are found through the Caskroom symlinks that point into `~/Applications`. A running app stops the script before any change.
 - Full `tests/tart-test.sh` passed (run 5): new checks for the report, migration, wrapper lines, script rollback, then re-setup and the manual rollback.
-- Still open: clips 04 (no wrapper question any more) and 06 (wrapper is already added) are out of date and need re-recording; `docs/test-results.md` needs a round for this; not committed yet; the first real-Mac run is described below.
+- Superseded: clips 04 and 06 were re-recorded later (see "Session end (2026-11-25, after the Steam fix)"), the test round was added, and everything is committed.
 
 ## Rules from the user
 
@@ -96,7 +96,7 @@ Start a clean VM: `tart delete hb-manual 2>/dev/null; tart clone ghcr.io/cirrusl
 
 Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tree clean except the user's untracked `.mp4` (do not commit). The repo is public and `main` is protected (signed commits required, no force-push or deletion, admins included): every push must be signed.
 
-**State at the end of the 2026-11-25 session: the only open item is 1 (a real-Mac test by the user). CI is green and the working tree is clean. Everything else below is done.**
+**State at the end of the 2026-11-25 session (superseded: the real-Mac tests have been done since; see Current state).**
 
 1. User task, later: follow `docs/getting-started.md` on a real Mac (new-Mac path: Part 1, "Install Homebrew"). Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
 2. Done (2026-11-25): all seven casts uploaded to asciinema.org as unlisted (private-pattern scan: 0 hits). Each GIF in `docs/getting-started.md` has a "Watch this clip with pause and copy" link. After you re-record a clip, upload it again (`asciinema upload --visibility unlisted docs/casts/NAME.cast`) and update its link. Old uploads stay online until the user deletes them on asciinema.org.
@@ -140,13 +140,13 @@ Details of finished work:
 
 ## Wrapper working-folder fix (2026-11-25)
 
-- Real-Mac bug: `brew update` through the wrapper failed from a folder the owner account cannot enter ("The current working directory must exist to run brew"). Fix: the wrapper runs owner-run commands from `/tmp`. Regression check added to `tests/tart-test.sh`; see round 11 in `docs/test-results.md`.
-- `setup.sh` now detects an out-of-date installed wrapper (`--check` reports it) and replaces it on a normal run. Rollback now picks the newest non-empty, unused backup. Not yet re-run on the maintainer's Mac (needs sudo): run `sudo ./scripts/setup.sh` there.
+- Real-Mac bug: `brew update` through the wrapper failed from a folder the owner account cannot enter ("The current working directory must exist to run brew"). Fix: the wrapper runs owner-run commands from a folder the owner can enter (first `/tmp`, now `/var/empty`: see the security scan section). Regression check added to `tests/tart-test.sh`; see round 11 in `docs/test-results.md`.
+- `setup.sh` now detects an out-of-date installed wrapper (`--check` reports it) and replaces it on a normal run. Rollback now picks the newest non-empty, unused backup. The maintainer ran the current `setup.sh` on their Mac on 2026-11-26.
 - Flaky: `brew uninstall --cask rectangle` in the VM can hang on a macOS Automation prompt for the login item. Kill the run after 5 minutes of silence and rerun.
 
 ## Real-Mac report: cask upgrade password prompt (2026-11-25, later)
 
-`brew upgrade --cask` failed for apps in `/Applications` that a person owns (the owner account cannot write; brew asks for its unknown sudo password). `setup.sh` now finds those apps and gives them to the owner (`find_foreign_apps`, `fix_foreign_apps`, rollback kind `app_chowned`). Tart run passed (round 12 in `docs/test-results.md`). Committed. On the real Mac this did not cover `bambu-studio` and `chatgpt`: the Caskroom held a real copy of the app instead of a symlink (adopted cask), so `brew upgrade` stopped with "already an App at". `find_foreign_apps` now also finds those; `fix_foreign_apps` replaces the copy with a symlink (rollback kind `caskroom_link`). Tart run passed (82 PASS). The user must run `sudo ./scripts/setup.sh` again on the real Mac, then `brew upgrade --cask`. Tart runs take 10+ minutes; the cask-uninstall Automation pause can add about 4 minutes, so use a watch loop of 150 x 5 s. Also seen on the real Mac: the first `sudo` password was mistyped once (not a bug), and brew 7 warns that tap `openai/tools` is not trusted (Tart's own tap; the user's choice).
+`brew upgrade --cask` failed for apps in `/Applications` that a person owns (the owner account cannot write; brew asks for its unknown sudo password). `setup.sh` now finds those apps and gives them to the owner (`find_foreign_apps`, `fix_foreign_apps`, rollback kind `app_chowned`). Tart run passed (round 12 in `docs/test-results.md`). Committed. On the real Mac this did not cover `bambu-studio` and `chatgpt`: the Caskroom held a real copy of the app instead of a symlink (adopted cask), so `brew upgrade` stopped with "already an App at". `find_foreign_apps` now also finds those; `fix_foreign_apps` replaces the copy with a symlink (rollback kind `caskroom_link`). Tart run passed (82 PASS). The user later re-ran `sudo ./scripts/setup.sh` on the real Mac (checked 2026-11-26). Tart runs take 10+ minutes; the cask-uninstall Automation pause can add about 4 minutes, so use a watch loop of 150 x 5 s. Also seen on the real Mac: the first `sudo` password was mistyped once (not a bug), and brew 7 warns that tap `openai/tools` is not trusted (Tart's own tap; the user's choice).
 
 ## Real-Mac run and AI prompt (2026-11-25)
 
