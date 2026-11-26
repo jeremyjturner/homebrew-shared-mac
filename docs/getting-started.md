@@ -1,8 +1,7 @@
 # Getting started
 
-This guide shows you how to share one Homebrew installation between two users on one Mac.
-It starts from a Mac where Homebrew is already installed.
-Homebrew is not installed yet? Read the [new Mac guide](new-mac.md) first.
+This guide shows you how to share one Homebrew installation between the people who use one Mac.
+It works for a new Mac and for a Mac that already shows the "not writable" error.
 Follow the steps in order.
 Do not skip a step.
 Prefer that an AI assistant does it for you? Use the [AI assistant guide](llm-prompt.md) instead.
@@ -20,9 +19,13 @@ Prefer that an AI assistant does it for you? Use the [AI assistant guide](llm-pr
 ## What you need
 
 - A Mac with Apple silicon (M1 or later).
-- Homebrew installed in `/opt/homebrew`.
-- Two administrator accounts on the Mac. Two people can use them, or one person can use both.
+- One administrator account. This is your own account.
+- An internet connection.
 - About 20 minutes.
+
+You do not need a second account now.
+The script creates the hidden owner account.
+Add the account of another person at any time (see Part 6).
 
 ## Words used in this guide
 
@@ -53,7 +56,8 @@ When a command asks for a password, no characters show on the screen. This is no
    ```
 
    You see a line that starts with `Homebrew`.
-   If you see `command not found`, install Homebrew first. Read the [new Mac guide](new-mac.md).
+   If you see `command not found`, Homebrew is not installed.
+   Install it first. See [Install Homebrew](#install-homebrew-new-mac-only).
 3. Type this command and press Return:
 
    ```sh
@@ -66,6 +70,41 @@ When a command asks for a password, no characters show on the screen. This is no
 ![brew --version shows the version. ls -ld shows who owns /opt/homebrew.](images/01-start-state.gif)
 
 [Watch this clip with pause and copy](https://asciinema.org/a/cuTxKvYQrP1mUc4J)
+
+### Install Homebrew (new Mac only)
+
+Skip this section if `brew --version` worked.
+Do these steps with your own account.
+
+1. Copy this line, paste it in Terminal, and press Return:
+
+   ```sh
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+2. Type your password when it asks and press Return.
+   No characters show on the screen. This is normal.
+3. Press Return when the installer asks.
+4. If a window asks you to install the command line developer tools, click **Install**.
+   Wait until it finishes. The installer then continues.
+5. Wait for the line `Installation successful!`.
+   This can take several minutes.
+6. Find the heading `Next steps` at the end of the text.
+   Copy the lines under it that start with `echo` and `eval`, one at a time.
+   Paste each line in Terminal and press Return.
+7. Check the result:
+
+   ```sh
+   brew --version
+   ```
+
+   You see a line that starts with `Homebrew`.
+
+Your account now owns Homebrew.
+This is the state that the script fixes.
+Do not run `sudo chown` on the Homebrew folder. Go on to Part 2.
+
+> **Note:** Homebrew's own page shows the newest install steps: <https://brew.sh>.
 
 ## Part 2: Get the files
 
@@ -251,12 +290,23 @@ Homebrew asks for your password first.
 
 [Watch this clip with pause and copy](https://asciinema.org/a/zk3HDtHI7GUKHcPZ)
 
-## Part 6: Check the second user
+## Part 6: Add and check another user (optional)
 
-The script already added the wrapper to the second user's `~/.zshrc`.
-Do these steps as the second user.
+Skip this part if you are the only person on this Mac.
+You can come back to it when another person needs Homebrew.
 
-1. Switch to the second user.
+If the account of the other person exists, the script already added the wrapper to its `~/.zshrc`.
+If the account does not exist yet, add it first:
+
+1. Open **System Settings**.
+2. Click **Users & Groups**.
+3. Click **Add Account**.
+4. Set **New Account** to **Administrator**.
+5. Type a name and a password. Click **Create User**.
+
+Do these steps as the other user.
+
+1. Switch to the other user.
    In Terminal, type `su - <account-name>` and press Return.
    Type the password of that account.
    Or use the Fast User Switching menu and open Terminal.
@@ -319,6 +369,35 @@ This is the safety limit of this design.
 ![Three wrong passwords stop the install.](images/07-wrong-password.gif)
 
 [Watch this clip with pause and copy](https://asciinema.org/a/dTf6BluHA2MX9g2T)
+
+## Update everything with one command
+
+Homebrew asks for your password at every `brew` command.
+Four commands for a full update mean four passwords.
+Use one command instead:
+
+```sh
+brew update-all
+```
+
+![One password. The four steps run one after the other.](images/08-update-all.gif)
+
+It runs these steps in order:
+
+1. `brew update` gets the list of new versions.
+2. `brew upgrade` upgrades packages and apps.
+3. `brew autoremove` removes packages that nothing needs.
+4. `brew cleanup` removes old files.
+
+It asks for your password one time.
+Homebrew shows the list of upgrades and asks: `Do you want to proceed with the upgrade? [y/n]`.
+Type `y` and press Return.
+To skip that question, type `brew update-all --yes`.
+The command stops at the first step that fails.
+
+> **Note:** `update-all` is part of the wrapper. It is not a Homebrew command.
+> It works only in a new Terminal window after the setup.
+> An older wrapper does not have it. Run `sudo ./scripts/setup.sh` again to get the new one.
 
 ## Rules for daily use
 

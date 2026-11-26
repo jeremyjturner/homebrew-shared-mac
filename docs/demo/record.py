@@ -273,6 +273,16 @@ def clip_wrong_password(s):
     s.run("brew list | grep cowsay || echo 'cowsay is not installed'")
 
 
+def clip_update_all(s):
+    s.run("type brew")
+    s.run("brew update-all", ["admin"])   # one password for all four steps
+
+
+def upgrade_everything():
+    """Hidden: upgrade all packages first, so that the clip shows no long list and no question."""
+    vm_sh("echo admin | sudo -S -u homebrew -H /opt/homebrew/bin/brew upgrade --yes >/dev/null 2>&1; true")
+
+
 def warm_up_homebrew():
     """Hidden: update Homebrew as the owner so the recording is short."""
     pre = ("echo admin | sudo -S -u homebrew -H /opt/homebrew/bin/brew update >/dev/null 2>&1; "
@@ -290,6 +300,7 @@ CLIPS = [
     ("06-second-user", as_bob(), clip_second_user, None),
     ("07-wrong-password", as_bob("source /usr/local/share/homebrew-shared-mac/brew-wrapper.zsh; "),
      clip_wrong_password, None),
+    ("08-update-all", as_admin, clip_update_all, upgrade_everything),
 ]
 
 if __name__ == "__main__":

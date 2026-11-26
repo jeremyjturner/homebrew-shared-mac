@@ -200,3 +200,12 @@ Tart check: the full `tests/tart-test.sh` passed (64 PASS, 0 FAIL). The known ca
 - Real Mac: `bambu-studio` and `chatgpt` had a real app copy in the Caskroom instead of a symlink, so `brew upgrade --cask` failed with "already an App at".
 - `setup.sh` now lists those apps (also when the owner is right), moves the copy to the backup and puts the usual symlink in its place. `--rollback` puts the copy back (`caskroom_link`).
 - New Tart checks: `--check` flags the second copy, setup makes it a link, rollback restores it, a second setup fixes it again, `brew reinstall` works. Full run: 82 PASS, 0 FAIL.
+
+## Round 14: `brew update-all` (one password)
+
+- Problem: the maintainer's update chain (`brew update && brew upgrade && brew upgrade --cask && brew autoremove && brew cleanup`) asked for a password five times. Homebrew 7 runs `sudo --reset-timestamp` at every user switch, so each `brew as-brew-user` call asks again.
+- Manual run in a VM (second user, real sudo password): the old chain asks once per command. The new `brew update-all` asked once, ran update, upgrade, autoremove and cleanup, and exited 0. `find /opt/homebrew ! -user homebrew` stayed empty.
+- Homebrew 7 asks `Do you want to proceed with the upgrade? [y/n]` before it upgrades. The first helper did not answer it and waited. `brew update-all --yes` skips it. `brew upgrade` already upgrades casks, so there is no separate `--cask` step.
+- New check: `tests/pty-update-all.py` (run by `tests/tart-test.sh`) logs in as the second user, sets a custom sudo prompt, runs `brew update-all --yes`, and fails unless there is exactly one prompt, four step headings and exit 0.
+- Tart check: the full `tests/tart-test.sh` passed (83 PASS, 0 FAIL).
+- Not tested: a cask that needs `sudo` during `update-all`.

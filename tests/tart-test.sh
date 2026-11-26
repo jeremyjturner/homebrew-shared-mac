@@ -105,6 +105,8 @@ x 'sudo -u bob -H /bin/zsh -c "source /tmp/brew-wrapper.zsh; export PATH=/opt/ho
 NEWPW=$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | cut -c1-20)
 check "documented dscl password reset works" "sudo dscl . -passwd /Users/homebrew '$NEWPW' && dscl . -authonly homebrew '$NEWPW'"
 x 'sudo rm /etc/sudoers.d/zz-test'
+# One password for `brew update-all` (the second user's own sudo password, no sudoers rule).
+python3 "$HERE/tests/pty-update-all.py" "$VM" bob "$BOBPW"
 if [ -z "$(x 'find /opt/homebrew ! -user homebrew | head -1')" ]; then echo "PASS ownership"; else echo "FAIL ownership"; exit 1; fi
 # Script rollback: undoes the account, owner, wrapper lines, --appdir line and moved apps.
 # The newest backup is the adopted-cask fix, then the app-owner change, then the main setup.

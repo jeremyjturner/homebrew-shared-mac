@@ -71,7 +71,7 @@ Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tr
 
 **State at the end of the 2026-11-25 session: the only open item is 1 (a real-Mac test by the user). CI is green and the working tree is clean. Everything else below is done.**
 
-1. User task, later: follow `docs/new-mac.md` and `docs/getting-started.md` on a real Mac. Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
+1. User task, later: follow `docs/getting-started.md` on a real Mac (new-Mac path: Part 1, "Install Homebrew"). Tart cannot test the installer prompts (Return key, sudo password) or the Command Line Tools install.
 2. Done (2026-11-25): all seven casts uploaded to asciinema.org as unlisted (private-pattern scan: 0 hits). Each GIF in `docs/getting-started.md` has a "Watch this clip with pause and copy" link. After you re-record a clip, upload it again (`asciinema upload --visibility unlisted docs/casts/NAME.cast`) and update its link. Old uploads stay online until the user deletes them on asciinema.org.
 3. Done (2026-11-25): `gh workflow run drift-check.yml` ran green and opened no `upstream-drift` issue (snapshots match upstream). The weekly run is on. When an issue appears, review it, then refresh with `scripts/drift-check.sh --update`.
 4. Dropped by the user (2026-11-25): GUI screenshots, a `.pkg` cask test, a scheduled macOS-runner re-test, changing the demo passwords.
@@ -80,7 +80,7 @@ Last commit: see `git log` (signed, pushed). Check the latest CI run. Working tr
 
 Details of finished work:
 
-1. Done: `docs/new-mac.md` (install Homebrew, add the second account, then Part 2 of the getting-started guide). Round 7 in `docs/test-results.md`. A reader who follows it on a real Mac is the missing test (installer prompts, Command Line Tools).
+1. Done, then merged (2026-11-26): `docs/new-mac.md` is now the "Install Homebrew" section in Part 1 of `docs/getting-started.md`. Round 7 in `docs/test-results.md`. A reader who follows it on a real Mac is the missing test (installer prompts, Command Line Tools).
    Also done: the hidden owner now gets a random password (round 6); no password prompt, `--password-stdin` removed. Only clip 04 changed. The other clips never showed that prompt.
 2. Done (round 5 in `docs/test-results.md`): a standard-account owner runs `update`, `install`, `upgrade`, but a cask fails (needs `sudo` for `/Applications`). This confirms the README reason. Not tested: a `.pkg` cask.
 3. Done (2026-11-25): the "untrusted" label in brew 7.0.12 is only for third-party taps (`buildkite/buildkite`, `equinix-labs/otel-cli`, `openai/tools`, `yq`, all added by the base image). The full warning ("brew trust ...", lists only those taps) did show in the full test run, on `brew install` as the second user, and not in a plain root-less `brew install hello` as admin. It names only the base image's third-party taps. A normal Mac has no third-party taps, so no guide note is needed. A user who added their own tap may see the label.
@@ -139,3 +139,10 @@ A scan of `scripts/` found 4 MEDIUM issues. Each fix was merged into `main` on 2
 - `fix/wrapper-cwd-tmp`: the wrapper ran owner commands from `/tmp`, so a `Brewfile` planted there ran as the owner. It now uses `/var/empty`.
 
 Tested before the merge: all four together in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). `tests/tart-test.sh` was re-run on the merged `main` (2026-11-26): 82 PASS, 0 FAIL. Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
+
+## Guides merged; `brew update-all` (2026-11-26)
+
+- `docs/new-mac.md` is gone. Its install steps are in Part 1 of `docs/getting-started.md`. Its "add the second account" part is now the optional first step of Part 6: the script creates the hidden owner itself and works with one person account. README Path B points to the merged guide.
+- New wrapper command `brew update-all` (update, upgrade, autoremove, cleanup) asks for one password. It does one `sudo -u OWNER`, and the owner runs all four steps. No sudoers rule. Options go to the upgrade step (`--yes` skips Homebrew's "proceed?" question). Round 14 in `docs/test-results.md`: 83 PASS.
+- New clip `08-update-all` (cast and GIF). Only the cast was read line by line; the GIF is rendered from it. It has no asciinema.org link yet (upload needs the user's approval).
+- Existing users get the command after they run `sudo ./scripts/setup.sh` again (it replaces an out-of-date wrapper).
