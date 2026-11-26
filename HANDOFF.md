@@ -131,11 +131,11 @@ Details of finished work:
 
 ## Security scan of `scripts/` (2026-11-25)
 
-A scan of `scripts/` found 4 MEDIUM issues. Each fix is on its own branch, not merged:
+A scan of `scripts/` found 4 MEDIUM issues. Each fix was merged into `main` on 2026-11-26 (PRs #3 to #6; the `fix/*` branches are deleted):
 
 - `fix/wrapper-install-symlink`: `install_wrapper` wrote `~/.zshrc` as root. It now writes as the account.
 - `fix/edit-file-symlink`: `edit_file` read and wrote user dotfiles as root. It now runs as the file's owner.
 - `fix/owner-password-argv`: the new owner's password was in the arguments of `sysadminctl` (any local account could read it; checked in a VM). `expect` now types it. `dscl -authonly` is replaced by a check for the password hash, because it stalled under `expect`.
 - `fix/wrapper-cwd-tmp`: the wrapper ran owner commands from `/tmp`, so a `Brewfile` planted there ran as the owner. It now uses `/var/empty`.
 
-Tested: all four merged in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
+Tested before the merge: all four together in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). `tests/tart-test.sh` was not re-run on the merged `main`. Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
