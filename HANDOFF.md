@@ -138,4 +138,4 @@ A scan of `scripts/` found 4 MEDIUM issues. Each fix was merged into `main` on 2
 - `fix/owner-password-argv`: the new owner's password was in the arguments of `sysadminctl` (any local account could read it; checked in a VM). `expect` now types it. `dscl -authonly` is replaced by a check for the password hash, because it stalled under `expect`.
 - `fix/wrapper-cwd-tmp`: the wrapper ran owner commands from `/tmp`, so a `Brewfile` planted there ran as the owner. It now uses `/var/empty`.
 
-Tested before the merge: all four together in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). `tests/tart-test.sh` was not re-run on the merged `main`. Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
+Tested before the merge: all four together in a throwaway worktree passed `tests/tart-test.sh` (82 PASS, exit 0). `tests/tart-test.sh` was re-run on the merged `main` (2026-11-26): 82 PASS, 0 FAIL. Not tested: the symlink and `/tmp/Brewfile` attacks themselves. The report is in `CLAUDE-SECURITY-20261125-131909/` (ignored by git).
