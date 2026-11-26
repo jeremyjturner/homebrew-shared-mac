@@ -173,9 +173,15 @@ backup_file() {   # copy a file into the backup folder before it is changed
 }
 
 edit_file() {     # $1 = file, $2 = sed -E expression. Keeps the owner and mode of the file.
-  local tmp
+  # Read and write as the account that owns the file, never as root. The file is in a
+  # folder that the account controls. A link there must not lead root to another file.
+  local tmp who
+  who=$(stat -f %Su "$1") || return 1
+  [[ $who == root && -L $1 ]] && return 1
   tmp=$(mktemp) || return 1
-  sed -E "$2" "$1" >"$tmp" && cat "$tmp" >"$1"
+  # The redirects open only the private temp file, as root. The user's file is opened by sudo -u.
+  # shellcheck disable=SC2024
+  sudo -u "$who" sed -E "$2" "$1" >"$tmp" && sudo -u "$who" tee "$1" <"$tmp" >/dev/null
   rm -f "$tmp"
 }
 
