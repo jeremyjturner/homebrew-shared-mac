@@ -122,6 +122,17 @@ check "script rollback: bob's --appdir line is active again" 'sudo grep -q "^exp
 check "script rollback: the backup is marked as used" 'sudo find /usr/local/share/homebrew-shared-mac/backups -name "*.rolled-back" | grep -q .'
 check "script rollback: brew install works for the admin without sudo" 'zsh -ilc "brew install hello && brew uninstall hello"'
 x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report2.txt"
+# A failed cask reinstall must put the old app back and say what state brew is in.
+# A plain folder already at the target path makes brew's install step fail (offline, no network trick).
+x 'sudo chmod 777 /Users/bob/Applications && cd /tmp && /opt/homebrew/bin/brew as-brew-user install --cask --appdir=/Users/bob/Applications keepingyouawake < /dev/null'
+check "failed reinstall: the test app is in bob's ~/Applications" 'test -d "/Users/bob/Applications/KeepingYouAwake.app"'
+x 'sudo mkdir -p /Applications/KeepingYouAwake.app && sudo touch /Applications/KeepingYouAwake.app/blocker'
+x "cd /tmp && sudo ./setup.sh --yes --owner homebrew --report /tmp/report3.txt < /dev/null 2>&1 | tee /tmp/setup-fail.txt; true"
+x 'sudo rm -rf /Applications/KeepingYouAwake.app'
+check "failed reinstall: the script says it failed" "grep -q \"Reinstall of 'keepingyouawake' failed\" /tmp/setup-fail.txt"
+check "failed reinstall: the script names the brew state and the fix" 'grep -q "brew reinstall --cask --appdir=/Applications keepingyouawake\|brew install --cask --appdir=/Applications keepingyouawake" /tmp/setup-fail.txt'
+check "failed reinstall: the old app is back" 'test -d "/Users/bob/Applications/KeepingYouAwake.app"'
+x 'sudo rm -rf /Users/bob/Applications/KeepingYouAwake.app; cd /tmp && /opt/homebrew/bin/brew as-brew-user uninstall --cask --force keepingyouawake < /dev/null; true'
 # Rollback: the steps of the "Rollback" section in docs/getting-started.md, in order.
 # shellcheck disable=SC2016  # $(whoami) must expand in the VM, not here
 x 'sudo chown -R "$(whoami)" /opt/homebrew'

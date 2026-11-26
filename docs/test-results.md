@@ -209,3 +209,10 @@ Tart check: the full `tests/tart-test.sh` passed (64 PASS, 0 FAIL). The known ca
 - New check: `tests/pty-update-all.py` (run by `tests/tart-test.sh`) logs in as the second user, sets a custom sudo prompt, runs `brew update-all --yes`, and fails unless there is exactly one prompt, four step headings and exit 0.
 - Tart check: the full `tests/tart-test.sh` passed (83 PASS, 0 FAIL).
 - Not tested: a cask that needs `sudo` during `update-all`.
+
+## Round 15: failed cask reinstall message
+
+- Problem: when `brew reinstall` of a moved app failed, the script put the old app back but did not say what state brew was in.
+- Now `setup.sh` asks brew if it still lists the cask. It then says that brew does not manage the app and gives the command to fix it (`brew reinstall --cask --appdir=/Applications NAME` or `brew install ...`).
+- New check in `tests/tart-test.sh`: a plain folder at `/Applications/KeepingYouAwake.app` makes the install step fail. The script must print the failure, the brew state and the command, and the old app must be back. A first try with a bad `HOMEBREW_ARTIFACT_DOMAIN` did not fail the download, so it was dropped.
+- Tart check: the full `tests/tart-test.sh` passed (93 PASS lines, 0 FAIL). `hb-test` was deleted.
