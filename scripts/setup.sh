@@ -620,6 +620,13 @@ migrate_apps() {
     else
       warn "Reinstall of '$cask' failed. Putting the old app back."
       mv "$saved/$(basename "$app")" "$app"
+      if (cd / && "$BREW" as-brew-user list --cask "$cask" >/dev/null 2>&1 </dev/null); then
+        warn "Brew still lists '$cask', but it does not manage the app at $app."
+        warn "To fix it later, run: brew reinstall --cask --appdir=/Applications $cask"
+      else
+        warn "Brew no longer lists '$cask'. The old app is back at $app and brew does not manage it."
+        warn "To manage it again, run: brew install --cask --appdir=/Applications $cask"
+      fi
     fi
   done <<<"$APPDIR_CASKS"
   rm -f "$rule"
